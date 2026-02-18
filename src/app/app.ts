@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { DiaryComponent } from './features/diary/diary.component';
 import { ProjectsComponent } from './features/projects/projects.component';
 import { LoginComponent } from './features/auth/login/login.component';
@@ -21,6 +21,21 @@ export class App {
   projectService = inject(ProjectService);
 
   currentPage = signal<PageState>('projects');
+
+  constructor() {
+    // Reseta o estado quando o usuário faz logout ou login
+    effect(() => {
+      if (!this.authService.isAuthenticated()) {
+        // Quando usuário faz logout, reseta o estado
+        this.currentPage.set('projects');
+        this.projectService.setCurrentProject(null);
+      } else {
+        // Quando usuário faz login, garante que começa na lista de projetos
+        this.currentPage.set('projects');
+        this.projectService.setCurrentProject(null);
+      }
+    });
+  }
 
   navigateToDiary(project: Project) {
     this.projectService.setCurrentProject(project);

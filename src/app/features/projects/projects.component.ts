@@ -1,18 +1,25 @@
-import { Component, signal, inject, OnInit, computed, output } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, computed, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../core/services/project.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Project, ProjectStatus, PROJECT_STATUS_LIST, PROJECT_STATUS_COLORS } from '../../core/models/project.model';
 
 @Component({
     selector: 'app-projects',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule],
-    templateUrl: './projects.component.html'
+    templateUrl: './projects.component.html',
+    styles: [`
+    .draggable-region {
+      -webkit-app-region: drag; /* Electron specific: makes div draggable */
+    }
+  `]
 })
-export class ProjectsComponent implements OnInit {
+export class ProjectsComponent implements OnInit, OnDestroy {
     private fb = inject(FormBuilder);
     projectService = inject(ProjectService);
+    private authService = inject(AuthService);
 
     projectSelected = output<Project>();
 
@@ -21,6 +28,8 @@ export class ProjectsComponent implements OnInit {
     isCreating = signal(false);
     errorMessage = signal<string | null>(null);
     statusList = PROJECT_STATUS_LIST;
+    currentTime = Date.now();
+    private timeInterval: any;
 
     createForm = this.fb.group({
         name: ['', [Validators.required, Validators.minLength(3)]],
@@ -40,6 +49,15 @@ export class ProjectsComponent implements OnInit {
 
     ngOnInit(): void {
         this.projectService.loadProjects();
+        this.timeInterval = setInterval(() => {
+            this.currentTime = Date.now();
+        }, 1000);
+    }
+
+    ngOnDestroy(): void {
+        if (this.timeInterval) {
+            clearInterval(this.timeInterval);
+        }
     }
 
     getStatusColor(status: ProjectStatus): string {
@@ -77,5 +95,9 @@ export class ProjectsComponent implements OnInit {
 
     selectProject(project: Project): void {
         this.projectSelected.emit(project);
+    }
+
+    logout(): void {
+        this.authService.logout();
     }
 }
