@@ -1,0 +1,6 @@
+<!-- App is now just a shell for features -->
+@if (authService.isAuthenticated()) {
+<app-diary></app-diary>
+} @else {
+<app-login></app-login>
+}

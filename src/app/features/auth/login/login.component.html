@@ -1,0 +1,112 @@
+<div class="min-h-screen bg-[#1e1e2e] flex items-center justify-center p-6 text-[#cdd6f4]">
+    <div class="max-w-md w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-2xl p-8">
+
+        <div class="text-center mb-8">
+            <div
+                class="w-16 h-16 bg-gradient-to-tr from-[#cba6f7] to-[#f5c2e7] rounded-2xl flex items-center justify-center shadow-lg shadow-[#cba6f7]/20 mx-auto mb-4">
+                <icon-database class="text-3xl text-[#1e1e2e]" />
+            </div>
+            <h1 class="text-2xl font-bold">DevContext</h1>
+            <p class="text-[#a6adc8] text-sm mt-2">
+                {{ isSetupMode() ? 'Configure sua senha de acesso' : 'Insira sua senha para entrar' }}
+            </p>
+        </div>
+
+        @if (isSetupMode()) {
+        <!-- Setup Form -->
+        <form [formGroup]="setupForm" (ngSubmit)="onSetup()" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Nova Senha</label>
+                <input type="password" formControlName="password"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Confirmar Senha</label>
+                <input type="password" formControlName="confirmPassword"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]">
+            </div>
+
+            @if (errorMessage()) {
+            <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-xs text-center">
+                {{ errorMessage() }}
+            </div>
+            }
+
+            <button type="submit" [disabled]="setupForm.invalid"
+                class="w-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] py-3 rounded-lg font-bold transition-transform active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
+                <icon-save />
+                Configurar Acesso
+            </button>
+        </form>
+        } @else {
+        <!-- Login Form -->
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="space-y-6">
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-xs font-bold text-[#a6adc8] uppercase">Senha</label>
+                    <button type="button" (click)="showChangePasswordModal.set(true)"
+                        class="text-[10px] text-[#cba6f7] hover:underline">Alterar Senha</button>
+                </div>
+                <input type="password" formControlName="password" autofocus
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]">
+            </div>
+
+            @if (errorMessage()) {
+            <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-xs text-center">
+                {{ errorMessage() }}
+            </div>
+            }
+
+            <button type="submit" [disabled]="loginForm.invalid"
+                class="w-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] py-3 rounded-lg font-bold transition-transform active:scale-95 disabled:opacity-50">
+                Entrar
+            </button>
+        </form>
+        }
+
+        <div class="mt-8 pt-6 border-t border-[#313244] text-center">
+            <p class="text-[10px] text-[#6c7086] uppercase tracking-widest">Acesso Local & Seguro</p>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+@if (showChangePasswordModal()) {
+<div class="fixed inset-0 bg-[#000]/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+    <div class="max-w-md w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl p-8 relative">
+        <button (click)="showChangePasswordModal.set(false)"
+            class="absolute top-4 right-4 text-[#6c7086] hover:text-white">✕</button>
+
+        <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <span class="w-1 h-6 bg-[#fab387] rounded-full"></span>
+            Alterar Senha
+        </h2>
+
+        <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Senha Atual</label>
+                <input type="password" formControlName="oldPassword"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#fab387] outline-none transition-all">
+            </div>
+            <hr class="border-[#313244] my-2">
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Nova Senha</label>
+                <input type="password" formControlName="newPassword"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#fab387] outline-none transition-all">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Confirmar Nova Senha</label>
+                <input type="password" formControlName="confirmNewPassword"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#fab387] outline-none transition-all">
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" [disabled]="changePasswordForm.invalid"
+                    class="w-full bg-[#fab387] hover:bg-[#fab387]/90 text-[#1e1e2e] py-3 rounded-lg font-bold transition-transform active:scale-95 disabled:opacity-50">
+                    Confirmar Alteração
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+}

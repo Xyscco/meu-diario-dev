@@ -1,0 +1,148 @@
+import { Component, signal, computed, inject, OnInit, OnDestroy, NgZone } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { IconMic } from '../../shared/icons/icon-mic.component';
+import { IconSave } from '../../shared/icons/icon-save.component';
+import { IconDatabase } from '../../shared/icons/icon-database.component';
+import { LogService } from '../../core/services/log.service';
+import { LogEntry } from '../../core/models/log-entry.model';
+import { AuthService } from '../../core/services/auth.service';
+import { LogDetailModalComponent } from './components/log-detail-modal/log-detail-modal.component';
+
+@Component({
+    selector: 'app-diary',
+    standalone: true,
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, IconMic, IconSave, IconDatabase, LogDetailModalComponent],
+    templateUrl: './diary.component.html',
+    styles: [`
+    /* Custom Scrollbar for dark theme */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #181825; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #585b70; }
+    
+    .draggable-region {
+      -webkit-app-region: drag; /* Electron specific: makes div draggable */
+    }
+  `]
+})
+export class DiaryComponent implements OnInit, OnDestroy {
+    fb = inject(FormBuilder);
+    ngZone = inject(NgZone);
+    logService = inject(LogService);
+    authService = inject(AuthService);
+
+    // State
+    entries = signal<LogEntry[]>([]);
+    isListening = signal<boolean>(false);
+    currentTime = Date.now();
+    isElectron = !!window.electronAPI;
+
+    selectedEntryForModal = signal<LogEntry | null>(null);
+
+    logout() {
+        this.authService.logout();
+    }
+
+    openDetail(entry: LogEntry) {
+        this.selectedEntryForModal.set(entry);
+    }
+
+    closeDetail() {
+        this.selectedEntryForModal.set(null);
+    }
+
+    // Computed
+    latestEntry = computed(() => this.entries().length > 0 ? this.entries()[0] : null);
+    history = computed(() => this.entries().slice(1));
+
+    availableTags = ['Backend', 'Frontend', 'Database', 'Meeting', 'Bugfix', 'Deploy'];
+    selectedTags: string[] = [];
+
+    recognition: any;
+
+    logForm: FormGroup = this.fb.group({
+        project: ['', Validators.required],
+        last_task: ['', Validators.required],
+        next_steps: ['', Validators.required]
+    });
+
+    constructor() {
+        setInterval(() => this.currentTime = Date.now(), 60000);
+        this.initSpeechRecognition();
+    }
+
+    async ngOnInit() {
+        const logs = await this.logService.getLogs();
+        this.entries.set(logs);
+    }
+
+    ngOnDestroy() {
+        if (this.recognition) this.recognition.abort();
+    }
+
+    async onSubmit() {
+        if (this.logForm.invalid) return;
+
+        const formVal = this.logForm.value;
+
+        const newEntry: LogEntry = {
+            uuid: crypto.randomUUID(),
+            created_at: new Date().toISOString(),
+            project: formVal.project,
+            last_task: formVal.last_task,
+            next_steps: formVal.next_steps,
+            tags: JSON.stringify(this.selectedTags)
+        };
+
+        const updatedLogs = await this.logService.saveLog(newEntry, this.entries());
+        this.entries.set(updatedLogs);
+
+        this.logForm.patchValue({
+            last_task: '',
+            next_steps: ''
+        });
+    }
+
+    parseTags(tags: string | string[]): string[] {
+        if (Array.isArray(tags)) return tags;
+        try {
+            return JSON.parse(tags);
+        } catch {
+            return [];
+        }
+    }
+
+    toggleTag(tag: string) {
+        if (this.selectedTags.includes(tag)) {
+            this.selectedTags = this.selectedTags.filter(t => t !== tag);
+        } else {
+            this.selectedTags.push(tag);
+        }
+    }
+
+    initSpeechRecognition() {
+        if ('webkitSpeechRecognition' in window) {
+            // @ts-ignore
+            this.recognition = new webkitSpeechRecognition();
+            this.recognition.continuous = false;
+            this.recognition.lang = 'pt-BR';
+
+            this.recognition.onstart = () => this.ngZone.run(() => this.isListening.set(true));
+            this.recognition.onend = () => this.ngZone.run(() => this.isListening.set(false));
+
+            this.recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                this.ngZone.run(() => {
+                    const currentVal = this.logForm.get('next_steps')?.value || '';
+                    this.logForm.patchValue({ next_steps: currentVal ? `${currentVal} ${transcript}` : transcript });
+                });
+            };
+        }
+    }
+
+    toggleListening() {
+        if (!this.recognition) return alert('Reconhecimento de voz não suportado neste ambiente.');
+        this.isListening() ? this.recognition.stop() : this.recognition.start();
+    }
+}

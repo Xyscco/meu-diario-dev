@@ -1,0 +1,61 @@
+<div class="fixed inset-0 bg-[#000]/60 backdrop-blur-sm flex items-center justify-center p-6 z-50" (click)="onClose()">
+    <div class="max-w-2xl w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl p-8 relative overflow-hidden group"
+        (click)="$event.stopPropagation()">
+
+        <!-- Decoration -->
+        <div class="absolute -right-4 -top-4 w-48 h-48 bg-[#cba6f7] rounded-full blur-[100px] opacity-10"></div>
+
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="text-xs font-bold text-[#f5c2e7] uppercase tracking-wider mb-1">Registro Detalhado</h3>
+                    <h2 class="text-3xl font-bold text-white tracking-tight">{{ log.project }}</h2>
+                </div>
+                <div class="text-right">
+                    <span
+                        class="text-sm bg-[#313244] px-4 py-1.5 rounded-full text-[#bac2de] font-mono border border-[#45475a]">
+                        {{ log.created_at | date:'dd/MM/yyyy HH:mm' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <!-- What was done -->
+                <div class="bg-[#1e1e2e]/80 p-6 rounded-2xl border-l-4 border-[#a6e3a1] shadow-inner">
+                    <p class="text-xs text-[#a6e3a1] font-bold mb-2 uppercase tracking-widest">O que foi concluído</p>
+                    <p class="text-[#cdd6f4] text-lg leading-relaxed">{{ log.last_task }}</p>
+                </div>
+
+                <!-- Next steps -->
+                <div class="bg-[#1e1e2e]/80 p-6 rounded-2xl border-l-4 border-[#fab387] shadow-inner">
+                    <p class="text-xs text-[#fab387] font-bold mb-2 uppercase tracking-widest">Próximos Passos / Onde
+                        Parei</p>
+                    <p class="text-[#cdd6f4] text-2xl font-medium leading-relaxed italic">"{{ log.next_steps }}"</p>
+                </div>
+
+                <!-- Tags -->
+                @if (log.tags) {
+                <div>
+                    <p class="text-[10px] text-[#6c7086] font-bold mb-3 uppercase tracking-widest px-1">Classificação
+                    </p>
+                    <div class="flex gap-2 flex-wrap">
+                        @for (tag of parseTags(log.tags); track tag) {
+                        <span
+                            class="px-4 py-1.5 bg-[#313244] text-[#bac2de] text-xs font-bold rounded-lg border border-[#45475a] hover:bg-[#45475a] transition-colors">
+                            #{{ tag }}
+                        </span>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+
+            <div class="mt-10 pt-6 border-t border-[#313244] flex justify-between items-center text-[#6c7086]">
+                <p class="text-[10px] uppercase font-bold tracking-tighter">ID: {{ log.uuid }}</p>
+                <button (click)="onClose()"
+                    class="text-sm font-bold text-[#cba6f7] hover:underline cursor-pointer">Fechar
+                    Detalhes</button>
+            </div>
+        </div>
+    </div>
+</div>
