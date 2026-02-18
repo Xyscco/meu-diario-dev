@@ -64,6 +64,15 @@ DevContext é uma ferramenta de preservação de contexto que ajuda desenvolvedo
 - Atualização otimista de entradas (prepend local)
 - Sincronização automática com banco de dados em tempo real
 
+### 📱 Progressive Web App (PWA)
+- ✅ Instalável em dispositivos Android, iOS e desktop
+- ✅ Funcionamento offline com caching automático
+- ✅ Service Worker para sincronização em background
+- ✅ Ícone na tela inicial e splash screen personalizada
+- ✅ Atualizações automáticas com notificação ao usuário
+- ✅ Funciona como aplicação nativa standalone
+- 📖 [Guia completo de PWA](PWA-GUIDE.md)
+
 ## 🏗️ Arquitetura do Projeto
 
 ### Estrutura de Pastas
@@ -142,6 +151,12 @@ src/app/
 
 ### APIs do Navegador
 - **Web Speech API**: Reconhecimento de voz (webkitSpeechRecognition)
+- **Service Worker**: PWA offline e sincronização background
+
+### PWA
+- **@angular/service-worker**: Gerenciamento de Service Worker
+- **Web App Manifest**: Instalação e metadados da PWA
+- **Cache API**: Caching automático de assets
 
 ### Desenvolvimento
 - **Jasmine/Karma**: Framework de testes
@@ -471,6 +486,24 @@ npm run build
 
 # Arquivos gerados em: dist/meu-diario-dev
 ```
+
+**Nota:** O build de produção inclui automaticamente a PWA com Service Worker habilitado!
+
+### 📱 PWA e Ícones
+
+Para funcionalidade PWA completa, você deve adicionar os ícones:
+
+```bash
+# Instalar sharp (para gerar ícones)
+npm install --save-dev sharp
+
+# Gerar ícones automaticamente
+node public/assets/icons/generate-icons.js
+```
+
+Ou gere os ícones usando uma ferramenta online como [PWA Builder](https://www.pwabuilder.com).
+
+Para mais detalhes, veja [PWA-GUIDE.md](PWA-GUIDE.md)
 
 ### Executar Testes
 

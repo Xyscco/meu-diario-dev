@@ -1,12 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 
 <head>
   <meta charset="utf-8">
-  <title>Renderer</title>
+  <title>Meu Diário Dev - DevContext</title>
   <base href="./">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Aplicação de diário/log para desenvolvedores para rastrear contexto diário de trabalho">
+  <meta name="theme-color" content="#cba6f7">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DevContext">
+  
+  <!-- Icons -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Disable tap highlight on mobile -->
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
 </head>
 
 <body>

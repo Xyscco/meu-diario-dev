@@ -1,6 +1,9 @@
 <!-- Offline Banner -->
 <app-offline-banner />
 
+<!-- PWA Prompt -->
+<app-pwa-prompt />
+
 <!-- App is now just a shell for features -->
 @if (authService.isAuthenticated()) {
   @if (currentPage() === 'projects') {

@@ -3,8 +3,10 @@ import { DiaryComponent } from './features/diary/diary.component';
 import { ProjectsComponent } from './features/projects/projects.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { OfflineBannerComponent } from './shared/components/offline-banner.component';
+import { PwaPromptComponent } from './shared/components/pwa-prompt.component';
 import { AuthService } from './core/services/auth.service';
 import { ProjectService } from './core/services/project.service';
+import { PwaService } from './core/services/pwa.service';
 import { CommonModule } from '@angular/common';
 import { Project } from './core/models/project.model';
 
@@ -13,12 +15,20 @@ export type PageState = 'projects' | 'diary';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, DiaryComponent, ProjectsComponent, LoginComponent, OfflineBannerComponent],
+  imports: [
+    CommonModule,
+    DiaryComponent,
+    ProjectsComponent,
+    LoginComponent,
+    OfflineBannerComponent,
+    PwaPromptComponent
+  ],
   templateUrl: './app.html',
 })
 export class App {
   authService = inject(AuthService);
   projectService = inject(ProjectService);
+  pwaService = inject(PwaService);
 
   currentPage = signal<PageState>('projects');
 
@@ -47,3 +57,4 @@ export class App {
     this.currentPage.set('projects');
   }
 }
+
