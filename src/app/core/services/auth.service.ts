@@ -8,7 +8,8 @@ export class AuthService {
     isAuthenticated = signal<boolean>(false);
     isSetupRequired = signal<boolean>(false);
 
-    private readonly DUMMY_EMAIL_DOMAIN = '@devcontext.local';
+    private readonly LAST_EMAIL_KEY = 'devcontext_last_email';
+    private readonly SAVE_EMAIL_KEY = 'devcontext_save_email';
 
     constructor(private ngZone: NgZone) {
         this.initSession();
@@ -21,97 +22,113 @@ export class AuthService {
                 this.ngZone.run(() => {
                     this.isAuthenticated.set(true);
                 });
+            } else {
+                // Se não tem sessão ativa, mostrar tela de login
+                this.ngZone.run(() => {
+                    this.isSetupRequired.set(false);
+                    this.isAuthenticated.set(false);
+                });
             }
         } catch (error) {
             console.error('Erro ao inicializar sessão:', error);
         }
     }
 
-    async checkSetup() {
+    getLastEmail(): string {
+        return localStorage.getItem(this.LAST_EMAIL_KEY) || '';
+    }
+
+    shouldRememberEmail(): boolean {
+        return localStorage.getItem(this.SAVE_EMAIL_KEY) === 'true';
+    }
+
+    async signup(email: string, password: string, saveEmail: boolean = false): Promise<{ success: boolean; error?: string }> {
         try {
-            const { data } = await supabase.auth.getSession();
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                // Tratamento de erros específicos
+                if (error.message.includes('rate limit')) {
+                    return { success: false, error: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.' };
+                }
+                if (error.message.includes('already registered')) {
+                    return { success: false, error: 'Este email já está registrado.' };
+                }
+                if (error.message.includes('invalid email')) {
+                    return { success: false, error: 'Email inválido.' };
+                }
+                if (error.message.includes('password')) {
+                    return { success: false, error: 'Senha não atende aos requisitos.' };
+                }
+                throw error;
+            }
+
+            // Salvar preferências de email
+            if (saveEmail) {
+                localStorage.setItem(this.LAST_EMAIL_KEY, email);
+                localStorage.setItem(this.SAVE_EMAIL_KEY, 'true');
+            } else {
+                localStorage.removeItem(this.SAVE_EMAIL_KEY);
+            }
 
             this.ngZone.run(() => {
-                if (data.session) {
-                    this.isAuthenticated.set(true);
-                    this.isSetupRequired.set(false);
-                } else {
-                    // Verificar se já existe algum usuário cadastrado
-                    const hasExistingUser = localStorage.getItem('devcontext_user_email');
-                    this.isSetupRequired.set(!hasExistingUser);
-                }
+                this.isAuthenticated.set(true);
             });
-        } catch (error) {
-            console.error('Erro ao verificar setup:', error);
-            this.ngZone.run(() => {
-                this.isSetupRequired.set(true);
-            });
+
+            return { success: true };
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Erro desconhecido ao criar conta.';
+            console.error('Erro ao cadastrar:', errorMessage);
+            return { success: false, error: errorMessage };
         }
     }
 
-    async login(password: string): Promise<boolean> {
+    async login(email: string, password: string, saveEmail: boolean = false): Promise<{ success: boolean; error?: string }> {
         try {
-            // Recuperar email armazenado
-            const email = localStorage.getItem('devcontext_user_email');
-            if (!email) {
-                console.error('Email não encontrado. Setup necessário.');
-                return false;
-            }
-
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password,
             });
 
-            if (error) throw error;
+            if (error) {
+                // Tratamento de erros específicos
+                if (error.message.includes('Invalid login')) {
+                    return { success: false, error: 'Email ou senha incorretos.' };
+                }
+                throw error;
+            }
+
+            // Salvar preferências de email
+            if (saveEmail) {
+                localStorage.setItem(this.LAST_EMAIL_KEY, email);
+                localStorage.setItem(this.SAVE_EMAIL_KEY, 'true');
+            } else {
+                localStorage.removeItem(this.SAVE_EMAIL_KEY);
+            }
 
             this.ngZone.run(() => {
                 this.isAuthenticated.set(true);
             });
 
-            return true;
-        } catch (error) {
-            console.error('Erro ao fazer login:', error);
-            return false;
-        }
-    }
-
-    async setupPassword(password: string): Promise<boolean> {
-        try {
-            // Gerar email dummy único
-            const dummyEmail = `user-${crypto.randomUUID()}${this.DUMMY_EMAIL_DOMAIN}`;
-
-            const { data, error } = await supabase.auth.signUp({
-                email: dummyEmail,
-                password: password,
-            });
-
-            if (error) throw error;
-
-            // Armazenar email para futuros logins
-            localStorage.setItem('devcontext_user_email', dummyEmail);
-
-            this.ngZone.run(() => {
-                this.isSetupRequired.set(false);
-                this.isAuthenticated.set(true);
-            });
-
-            return true;
-        } catch (error) {
-            console.error('Erro ao configurar senha:', error);
-            return false;
+            return { success: true };
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Erro desconhecido ao fazer login.';
+            console.error('Erro ao fazer login:', errorMessage);
+            return { success: false, error: errorMessage };
         }
     }
 
     async changePassword(oldPassword: string, newPassword: string): Promise<boolean> {
         try {
-            // Validar senha antiga fazendo login novamente
-            const email = localStorage.getItem('devcontext_user_email');
-            if (!email) return false;
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user?.email) return false;
 
             // Verificar senha atual
             const { error: loginError } = await supabase.auth.signInWithPassword({
-                email,
+                email: user.email,
                 password: oldPassword,
             });
 

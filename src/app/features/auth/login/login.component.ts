@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
@@ -11,21 +11,26 @@ import { IconSave } from '../../../shared/icons/icon-save.component';
     imports: [CommonModule, FormsModule, ReactiveFormsModule, IconDatabase, IconSave],
     templateUrl: './login.component.html'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
     private fb = inject(FormBuilder);
     private authService = inject(AuthService);
 
-    isSetupMode = this.authService.isSetupRequired;
+    isSignupMode = signal<boolean>(false);
     errorMessage = signal<string | null>(null);
     showChangePasswordModal = signal(false);
+    isLoading = signal(false);
 
     loginForm = this.fb.group({
-        password: ['', Validators.required]
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', Validators.required],
+        saveEmail: [false]
     });
 
-    setupForm = this.fb.group({
-        password: ['', [Validators.required]],
-        confirmPassword: ['', Validators.required]
+    signupForm = this.fb.group({
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', Validators.required],
+        confirmPassword: ['', Validators.required],
+        saveEmail: [true]
     });
 
     changePasswordForm = this.fb.group({
@@ -34,18 +39,40 @@ export class LoginComponent {
         confirmNewPassword: ['', Validators.required]
     });
 
-    async onLogin() {
-        if (this.loginForm.invalid) return;
-        const { password } = this.loginForm.value;
-        const success = await this.authService.login(password!);
-        if (!success) {
-            this.errorMessage.set('Senha incorreta ou problema de conexão. Verifique sua internet.');
+    ngOnInit() {
+        const lastEmail = this.authService.getLastEmail();
+        const shouldRemember = this.authService.shouldRememberEmail();
+        
+        if (lastEmail && shouldRemember) {
+            this.loginForm.patchValue({
+                email: lastEmail,
+                saveEmail: true
+            });
         }
     }
 
-    async onSetup() {
-        if (this.setupForm.invalid) return;
-        const { password, confirmPassword } = this.setupForm.value;
+    toggleMode() {
+        this.isSignupMode.update(mode => !mode);
+        this.errorMessage.set(null);
+    }
+
+    async onLogin() {
+        if (this.loginForm.invalid) return;
+        
+        this.isLoading.set(true);
+        const { email, password, saveEmail } = this.loginForm.value;
+        const result = await this.authService.login(email!, password!, saveEmail ?? false);
+        
+        if (!result.success) {
+            this.errorMessage.set(result.error || 'Email ou senha incorretos. Verifique seus dados.');
+        }
+        this.isLoading.set(false);
+    }
+
+    async onSignup() {
+        if (this.signupForm.invalid) return;
+        
+        const { email, password, confirmPassword, saveEmail } = this.signupForm.value;
 
         if (password !== confirmPassword) {
             this.errorMessage.set('As senhas não coincidem.');
@@ -57,10 +84,13 @@ export class LoginComponent {
             return;
         }
 
-        const success = await this.authService.setupPassword(password!);
-        if (!success) {
-            this.errorMessage.set('Erro ao definir senha. Verifique sua conexão com internet.');
+        this.isLoading.set(true);
+        const result = await this.authService.signup(email!, password!, saveEmail ?? false);
+        
+        if (!result.success) {
+            this.errorMessage.set(result.error || 'Erro ao criar conta. Verifique seu email ou tente outro.');
         }
+        this.isLoading.set(false);
     }
 
     async onChangePassword() {

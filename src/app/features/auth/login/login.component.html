@@ -8,23 +8,36 @@
             </div>
             <h1 class="text-2xl font-bold">DevContext</h1>
             <p class="text-[#a6adc8] text-sm mt-2">
-                {{ isSetupMode() ? 'Configure sua senha de acesso' : 'Insira sua senha para entrar' }}
+                {{ isSignupMode() ? 'Crie sua conta' : 'Faça login na sua conta' }}
             </p>
         </div>
 
-        @if (isSetupMode()) {
-        <!-- Setup Form -->
-        <form [formGroup]="setupForm" (ngSubmit)="onSetup()" class="space-y-4">
+        @if (isSignupMode()) {
+        <!-- Signup Form -->
+        <form [formGroup]="signupForm" (ngSubmit)="onSignup()" class="space-y-4">
             <div>
-                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Nova Senha</label>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Email</label>
+                <input type="email" formControlName="email" autofocus
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]"
+                    placeholder="seu@email.com">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Senha</label>
                 <input type="password" formControlName="password"
                     class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]">
+                <p class="text-[10px] text-[#6c7086] mt-1">Mínimo 6 caracteres, 1 maiúscula, 1 minúscula e 1 número</p>
             </div>
             <div>
                 <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Confirmar Senha</label>
                 <input type="password" formControlName="confirmPassword"
                     class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]">
             </div>
+            
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="saveEmailSignup" formControlName="saveEmail"
+                    class="w-4 h-4 rounded bg-[#1e1e2e] border border-[#313244] cursor-pointer">
+                <label for="saveEmailSignup" class="text-xs text-[#a6adc8] cursor-pointer">Lembrar email</label>
+            </div>
 
             @if (errorMessage()) {
             <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-xs text-center">
@@ -32,23 +45,42 @@
             </div>
             }
 
-            <button type="submit" [disabled]="setupForm.invalid"
+            <button type="submit" [disabled]="signupForm.invalid || isLoading()"
                 class="w-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] py-3 rounded-lg font-bold transition-transform active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
                 <icon-save />
-                Configurar Acesso
+                {{ isLoading() ? 'Criando conta...' : 'Criar Conta' }}
             </button>
+
+            <p class="text-center text-xs text-[#a6adc8] mt-4">
+                Já tem conta? 
+                <button type="button" (click)="toggleMode()" class="text-[#cba6f7] hover:underline font-bold">
+                    Faça login
+                </button>
+            </p>
         </form>
         } @else {
         <!-- Login Form -->
-        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="space-y-6">
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Email</label>
+                <input type="email" formControlName="email" autofocus
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]"
+                    placeholder="seu@email.com">
+            </div>
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="block text-xs font-bold text-[#a6adc8] uppercase">Senha</label>
                     <button type="button" (click)="showChangePasswordModal.set(true)"
                         class="text-[10px] text-[#cba6f7] hover:underline">Alterar Senha</button>
                 </div>
-                <input type="password" formControlName="password" autofocus
+                <input type="password" formControlName="password"
                     class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]">
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="saveEmail" formControlName="saveEmail"
+                    class="w-4 h-4 rounded bg-[#1e1e2e] border border-[#313244] cursor-pointer">
+                <label for="saveEmail" class="text-xs text-[#a6adc8] cursor-pointer">Salvar email</label>
             </div>
 
             @if (errorMessage()) {
@@ -57,10 +89,17 @@
             </div>
             }
 
-            <button type="submit" [disabled]="loginForm.invalid"
+            <button type="submit" [disabled]="loginForm.invalid || isLoading()"
                 class="w-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] py-3 rounded-lg font-bold transition-transform active:scale-95 disabled:opacity-50">
-                Entrar
+                {{ isLoading() ? 'Entrando...' : 'Entrar' }}
             </button>
+
+            <p class="text-center text-xs text-[#a6adc8] mt-4">
+                Não tem conta? 
+                <button type="button" (click)="toggleMode()" class="text-[#cba6f7] hover:underline font-bold">
+                    Criar conta
+                </button>
+            </p>
         </form>
         }
 
