@@ -28,6 +28,7 @@
     "@angular/forms": "^20.3.0",
     "@angular/platform-browser": "^20.3.0",
     "@angular/router": "^20.3.0",
+    "@supabase/supabase-js": "^2.96.0",
     "@tailwindcss/postcss": "^4.1.18",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
