@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, OnInit, OnDestroy, NgZone } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, OnDestroy, NgZone, output } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IconMic } from '../../shared/icons/icon-mic.component';
@@ -7,6 +7,7 @@ import { IconDatabase } from '../../shared/icons/icon-database.component';
 import { LogService } from '../../core/services/log.service';
 import { LogEntry } from '../../core/models/log-entry.model';
 import { AuthService } from '../../core/services/auth.service';
+import { ProjectService } from '../../core/services/project.service';
 import { LogDetailModalComponent } from './components/log-detail-modal/log-detail-modal.component';
 
 @Component({
@@ -31,6 +32,9 @@ export class DiaryComponent implements OnInit, OnDestroy {
     ngZone = inject(NgZone);
     logService = inject(LogService);
     authService = inject(AuthService);
+    projectService = inject(ProjectService);
+
+    backToProjects = output<void>();
 
     // State
     entries = signal<LogEntry[]>([]);
@@ -41,8 +45,14 @@ export class DiaryComponent implements OnInit, OnDestroy {
 
     selectedEntryForModal = signal<LogEntry | null>(null);
 
+    readonly currentProject = this.projectService.currentProject;
+
     logout() {
         this.authService.logout();
+    }
+
+    goBackToProjects() {
+        this.backToProjects.emit();
     }
 
     openDetail(entry: LogEntry) {
@@ -74,7 +84,14 @@ export class DiaryComponent implements OnInit, OnDestroy {
     }
 
     async ngOnInit() {
-        const logs = await this.logService.getLogs();
+        // Se há um projeto selecionado, preenchê-lo no formulário
+        const project = this.currentProject();
+        if (project?.name) {
+            this.logForm.patchValue({ project: project.name });
+        }
+
+        // Carregar logs do projeto
+        const logs = await this.logService.getLogs(project?.id);
         this.entries.set(logs);
 
         // Add online/offline listeners
@@ -99,10 +116,12 @@ export class DiaryComponent implements OnInit, OnDestroy {
 
         this.isSaving.set(true);
         const formVal = this.logForm.value;
+        const projectId = this.currentProject()?.id;
 
         const newEntry: LogEntry = {
             uuid: crypto.randomUUID(),
             created_at: new Date().toISOString(),
+            project_id: projectId,
             project: formVal.project,
             last_task: formVal.last_task,
             next_steps: formVal.next_steps,
@@ -110,7 +129,7 @@ export class DiaryComponent implements OnInit, OnDestroy {
         };
 
         try {
-            const updatedLogs = await this.logService.saveLog(newEntry, this.entries());
+            const updatedLogs = await this.logService.saveLog(newEntry, this.entries(), projectId);
             this.entries.set(updatedLogs);
             this.logForm.reset();
             this.selectedTags = [];

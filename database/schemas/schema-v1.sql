@@ -1,5 +1,5 @@
--- Schema do Supabase para DevContext
--- Execute este SQL no SQL Editor do Supabase Dashboard
+-- Schema do Supabase para DevContext - Versão 1 (Original)
+-- Execute este SQL apenas se estiver iniciando um novo projeto
 
 -- Tabela de entradas de log
 CREATE TABLE log_entries (

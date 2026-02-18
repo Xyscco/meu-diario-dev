@@ -3,7 +3,11 @@
 
 <!-- App is now just a shell for features -->
 @if (authService.isAuthenticated()) {
-<app-diary></app-diary>
+  @if (currentPage() === 'projects') {
+    <app-projects (projectSelected)="navigateToDiary($event)"></app-projects>
+  } @else if (currentPage() === 'diary') {
+    <app-diary (backToProjects)="navigateToProjects()"></app-diary>
+  }
 } @else {
-<app-login></app-login>
+  <app-login></app-login>
 }

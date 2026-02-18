@@ -8,12 +8,18 @@ import { supabase } from '../config/supabase.config';
 export class LogService {
     private ngZone = inject(NgZone);
 
-    async getLogs(): Promise<LogEntry[]> {
+    async getLogs(projectId?: string): Promise<LogEntry[]> {
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('log_entries')
-                .select('*')
-                .order('created_at', { ascending: false });
+                .select('*');
+
+            // Se projectId foi fornecido, filtrar por ele
+            if (projectId) {
+                query = query.eq('project_id', projectId);
+            }
+
+            const { data, error } = await query.order('created_at', { ascending: false });
 
             if (error) throw error;
 
@@ -29,16 +35,21 @@ export class LogService {
         }
     }
 
-    async saveLog(entry: LogEntry, currentEntries: LogEntry[]): Promise<LogEntry[]> {
+    async saveLog(entry: LogEntry, currentEntries: LogEntry[], projectId?: string): Promise<LogEntry[]> {
         try {
             // Adicionar user_id automaticamente
             const user = (await supabase.auth.getUser()).data.user;
             if (!user) throw new Error('Usuário não autenticado');
 
-            const entryWithUser = {
+            const entryWithUser: any = {
                 ...entry,
                 user_id: user.id
             };
+
+            // Adicionar project_id se fornecido
+            if (projectId) {
+                entryWithUser.project_id = projectId;
+            }
 
             const { data, error } = await supabase
                 .from('log_entries')

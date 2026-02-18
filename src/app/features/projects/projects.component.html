@@ -1,0 +1,147 @@
+<div class="min-h-screen bg-[#1e1e2e] p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-[#cdd6f4] mb-2">Meus Projetos</h1>
+            <p class="text-[#a6adc8]">Gerencie seus projetos e acompanhe o progresso</p>
+        </div>
+
+        <!-- Ações -->
+        <div class="mb-8 flex justify-between items-center gap-4">
+            <div class="flex gap-2 flex-wrap">
+                <button 
+                    (click)="filterStatus.set(null)"
+                    [class.active]="filterStatus() === null"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterStatus() === null ? 'bg-[#cba6f7] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                    Todos
+                </button>
+                <button 
+                    (click)="filterStatus.set('Aguardando')"
+                    [class.active]="filterStatus() === 'Aguardando'"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterStatus() === 'Aguardando' ? 'bg-[#f5c2e7] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                    Aguardando
+                </button>
+                <button 
+                    (click)="filterStatus.set('Em execução')"
+                    [class.active]="filterStatus() === 'Em execução'"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterStatus() === 'Em execução' ? 'bg-[#a6e3a1] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                    Em execução
+                </button>
+                <button 
+                    (click)="filterStatus.set('Pausado')"
+                    [class.active]="filterStatus() === 'Pausado'"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterStatus() === 'Pausado' ? 'bg-[#f9e2af] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                    Pausado
+                </button>
+                <button 
+                    (click)="filterStatus.set('Finalizado')"
+                    [class.active]="filterStatus() === 'Finalizado'"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterStatus() === 'Finalizado' ? 'bg-[#94e2d5] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                    Finalizado
+                </button>
+            </div>
+            <button 
+                (click)="showCreateModal.set(true)"
+                class="bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] px-6 py-2 rounded-lg font-bold transition-all">
+                + Novo Projeto
+            </button>
+        </div>
+
+        <!-- Lista de Projetos -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (project of filteredProjects(); track project.id) {
+                <div class="bg-[#181825] border border-[#313244] rounded-xl p-6 hover:border-[#cba6f7] transition-all cursor-pointer"
+                    (click)="selectProject(project)">
+                    <!-- Status Indicator -->
+                    <div class="flex items-start justify-between mb-4">
+                        <h2 class="text-xl font-bold text-[#cdd6f4] flex-1">{{ project.name }}</h2>
+                        <div class="relative group">
+                            <button 
+                                [style.background-color]="getStatusColor(project.status)"
+                                class="px-3 py-1 rounded-full text-xs font-semibold text-[#1e1e2e] transition-all">
+                                {{ project.status }}
+                            </button>
+                            <!-- Dropdown -->
+                            <div class="hidden group-hover:block absolute right-0 mt-1 w-40 bg-[#313244] border border-[#45475a] rounded-lg shadow-lg z-10">
+                                <button 
+                                    *ngFor="let status of statusList"
+                                    (click)="updateStatus(project.id!, status); $event.stopPropagation()"
+                                    class="w-full text-left px-4 py-2 text-xs text-[#cdd6f4] hover:bg-[#45475a] transition-all">
+                                    {{ status }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (project.description) {
+                        <p class="text-[#a6adc8] text-sm mb-4 line-clamp-2">{{ project.description }}</p>
+                    }
+
+                    <div class="pt-4 border-t border-[#313244] flex justify-end gap-2">
+                        <button 
+                            (click)="deleteProject(project.id!); $event.stopPropagation()"
+                            class="px-3 py-1 rounded text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all">
+                            Deletar
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @if (filteredProjects().length === 0) {
+                <div class="col-span-full text-center py-12">
+                    <p class="text-[#6c7086] text-lg">Nenhum projeto encontrado</p>
+                    <button 
+                        (click)="showCreateModal.set(true)"
+                        class="mt-4 text-[#cba6f7] hover:underline font-semibold">
+                        Crie seu primeiro projeto
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Criar Projeto -->
+@if (showCreateModal()) {
+<div class="fixed inset-0 bg-[#000]/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+    <div class="max-w-md w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl p-8 relative">
+        <button 
+            (click)="showCreateModal.set(false)"
+            class="absolute top-4 right-4 text-[#6c7086] hover:text-white">✕</button>
+
+        <h2 class="text-2xl font-bold mb-6 text-[#cdd6f4]">Novo Projeto</h2>
+
+        <form [formGroup]="createForm" (ngSubmit)="onCreateProject()" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Nome do Projeto</label>
+                <input type="text" formControlName="name" autofocus
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]"
+                    placeholder="Ex: Landing Page">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Descrição (Opcional)</label>
+                <textarea formControlName="description" rows="3"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"
+                    placeholder="Descreva o propósito do projeto..."></textarea>
+            </div>
+
+            @if (errorMessage()) {
+                <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-xs text-center">
+                    {{ errorMessage() }}
+                </div>
+            }
+
+            <button type="submit" [disabled]="createForm.invalid || isCreating()"
+                class="w-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] py-3 rounded-lg font-bold transition-all disabled:opacity-50">
+                {{ isCreating() ? 'Criando...' : 'Criar Projeto' }}
+            </button>
+        </form>
+    </div>
+</div>
+}
