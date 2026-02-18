@@ -4,7 +4,7 @@
 
 **Meu Diário Dev** (também conhecido como **DevContext**) é uma aplicação de diário/log para desenvolvedores, projetada para ajudar a rastrear o contexto diário de trabalho. A aplicação permite registrar o que foi feito, os próximos passos e organizar tudo com tags, facilitando a retomada do trabalho após pausas ou intervalos.
 
-A aplicação funciona tanto como **aplicação desktop Electron** quanto como **aplicação web** no navegador.
+A aplicação é uma **aplicação web moderna** que funciona em navegadores, com suporte a PWA (Progressive Web App) e persistência de dados em Supabase.
 
 ## 🎯 Propósito
 
@@ -44,10 +44,10 @@ DevContext é uma ferramenta de preservação de contexto que ajuda desenvolvedo
 - Modal de detalhes para visualização expandida
 - Ordenação por data (mais recentes primeiro)
 
-### 💾 Sincronização de Dados
-- **Electron Desktop**: Persistência em banco de dados SQLite
-- **Navegador Web**: Fallback para LocalStorage
-- Sincronização automática entre interface e backend
+### 💾 Persistência de Dados
+- **Supabase**: Backend-as-a-Service com PostgreSQL
+- **Row-Level Security (RLS)**: Dados isolados por usuário
+- Sincronização automática com banco de dados em tempo real
 
 ## 🏗️ Arquitetura do Projeto
 
@@ -61,8 +61,8 @@ src/app/
 │   ├── services/
 │   │   ├── auth.service.ts       # Gerenciamento de autenticação
 │   │   └── log.service.ts        # Persistência de dados
-│   └── types/
-│       └── electron.d.ts          # Definições de API do Electron IPC
+└── config/
+       └── supabase.config.ts     # Configuração do cliente Supabase
 ├── features/                      # Módulos de funcionalidades
 │   ├── auth/
 │   │   └── login/
@@ -112,10 +112,10 @@ src/app/
 - **Reactive Forms**: Formulários reativos com validação
 - **RxJS** | 7.8.0 | Programação reativa
 
-### Desktop e Persistência
-- **Electron IPC**: Bridge para comunicação com backend desktop
-- **SQLite**: Banco de dados (modo Electron)
-- **LocalStorage**: Fallback para modo web
+### Backend e Persistência
+- **Supabase**: Backend-as-a-Service (PostgreSQL + Auth)
+- **Supabase Auth**: Autenticação de usuários com email dummy
+- **PostgreSQL**: Banco de dados relacional via Supabase
 
 ### APIs do Navegador
 - **Web Speech API**: Reconhecimento de voz (webkitSpeechRecognition)
@@ -133,8 +133,7 @@ src/app/
 
 ```typescript
 export interface LogEntry {
-    id?: number;           // ID auto-incremento do SQLite
-    uuid?: string;         // Identificador UUID único
+    uuid?: string;          // UUID do PostgreSQL         // Identificador UUID único
     created_at: string;    // Timestamp ISO (e.g., "2026-02-18T12:00:00.000Z")
     project: string;       // Nome do projeto/contexto
     last_task: string;     // Descrição do trabalho realizado
@@ -150,7 +149,7 @@ export interface LogEntry {
 │  DiaryComponent │
 └────────┬────────┘
          │
-         ├──► LogService.saveLog(entry) ──► SQLite/LocalStorage
+         ├──► LogService.saveLog(entry) ──► Supabase (PostgreSQL)
          │
          └──► LogService.getLogs() ──────► Retorna LogEntry[]
 ```
@@ -165,7 +164,7 @@ export interface LogEntry {
 
 ### Layout
 - **Grid Responsivo**: Formulário principal + barra lateral de histórico
-- **Região Arrastável**: Barra de título Electron (desktop)
+- **Barra de título**: Cabeçalho com relógio e status de conexão
 - **Scrollbar Customizada**: Estilo minimalista para área de histórico
 
 ### Interações
@@ -186,7 +185,8 @@ export interface LogEntry {
 **Responsabilidades:**
 - Gerencia estado de autenticação via signals (`isAuthenticated`, `isSetupRequired`)
 - Valida força da senha (6+ caracteres, maiúscula, minúscula, número)
-- Comunica com backend Electron via IPC para credenciais seguras
+- Comunica com Supabase Auth para autenticação segura
+- Email dummy interno (`user-xxxxx@devcontext.local`)
 - Implementa login, configuração e alteração de senha
 
 **Principais Métodos:**
@@ -201,7 +201,7 @@ logout(): void
 ### 2. **LogService** (`core/services/log.service.ts`)
 
 **Responsabilidades:**
-- Abstrai persistência de dados (SQLite no Electron, LocalStorage no navegador)
+- Abstrai persistência de dados via Supabase com RLS policies
 - Carrega histórico de logs
 - Salva novas entradas
 - Coordena NgZone para atualizações reativas
@@ -320,7 +320,7 @@ npm run watch
   - 1 número
 
 ### Armazenamento de Credenciais
-- **Electron**: Credenciais armazenadas de forma segura via backend Electron
+- **Supabase Auth**: Credenciais autenticadas via JWT tokens
 - **Web**: Mock simples (não recomendado para produção)
 
 ### Dados do Diário

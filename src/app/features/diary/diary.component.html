@@ -17,10 +17,9 @@
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight text-[#cdd6f4]">DevContext</h1>
                     <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full"
-                            [ngClass]="isElectron ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-yellow-500'"></span>
+                        <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
                         <p class="text-xs text-[#a6adc8]">
-                            {{ isElectron ? 'Conectado ao SQLite' : 'Modo Web (LocalStorage)' }}
+                            Conectado ao Supabase
                         </p>
                     </div>
                 </div>
@@ -144,10 +143,19 @@
                     </div>
 
                     <div class="pt-4 flex justify-end">
-                        <button type="submit" [disabled]="logForm.invalid"
+                        <button type="submit" [disabled]="logForm.invalid || !isOnline() || isSaving()"
                             class="bg-[#89b4fa] hover:bg-[#89b4fa]/90 text-[#1e1e2e] px-8 py-3 rounded-lg font-bold flex items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <icon-save />
-                            Salvar no Diario
+                            @if (isSaving()) {
+                                <span class="inline-block animate-spin">⟳</span>
+                                Salvando...
+                            } @else {
+                                <icon-save />
+                                @if (!isOnline()) {
+                                    Sem conexão
+                                } @else {
+                                    Salvar no Diario
+                                }
+                            }
                         </button>
                     </div>
 
@@ -163,7 +171,7 @@
             </div>
 
             <div class="space-y-3 h-[calc(100vh-200px)] overflow-y-auto pr-2 custom-scrollbar">
-                @for (entry of history(); track entry.id) {
+                @for (entry of history(); track entry.uuid) {
                 <div (click)="openDetail(entry)"
                     class="bg-[#181825] border border-[#313244] rounded-xl p-4 hover:border-[#cba6f7] hover:shadow-lg hover:shadow-[#cba6f7]/5 transition-all cursor-pointer group active:scale-[0.98]">
                     <div class="flex justify-between items-start mb-2">

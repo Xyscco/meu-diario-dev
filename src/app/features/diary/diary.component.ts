@@ -35,8 +35,9 @@ export class DiaryComponent implements OnInit, OnDestroy {
     // State
     entries = signal<LogEntry[]>([]);
     isListening = signal<boolean>(false);
+    isOnline = signal<boolean>(navigator.onLine);
+    isSaving = signal<boolean>(false);
     currentTime = Date.now();
-    isElectron = !!window.electronAPI;
 
     selectedEntryForModal = signal<LogEntry | null>(null);
 
@@ -75,15 +76,28 @@ export class DiaryComponent implements OnInit, OnDestroy {
     async ngOnInit() {
         const logs = await this.logService.getLogs();
         this.entries.set(logs);
+
+        // Add online/offline listeners
+        window.addEventListener('online', this.updateOnlineStatus);
+        window.addEventListener('offline', this.updateOnlineStatus);
     }
 
     ngOnDestroy() {
         if (this.recognition) this.recognition.abort();
+        window.removeEventListener('online', this.updateOnlineStatus);
+        window.removeEventListener('offline', this.updateOnlineStatus);
     }
 
-    async onSubmit() {
-        if (this.logForm.invalid) return;
+    private updateOnlineStatus = () => {
+        this.ngZone.run(() => {
+            this.isOnline.set(navigator.onLine);
+        });
+    };
 
+    async onSubmit() {
+        if (this.logForm.invalid || !this.isOnline()) return;
+
+        this.isSaving.set(true);
         const formVal = this.logForm.value;
 
         const newEntry: LogEntry = {
@@ -92,11 +106,19 @@ export class DiaryComponent implements OnInit, OnDestroy {
             project: formVal.project,
             last_task: formVal.last_task,
             next_steps: formVal.next_steps,
-            tags: JSON.stringify(this.selectedTags)
+            tags: [...this.selectedTags]
         };
 
-        const updatedLogs = await this.logService.saveLog(newEntry, this.entries());
-        this.entries.set(updatedLogs);
+        try {
+            const updatedLogs = await this.logService.saveLog(newEntry, this.entries());
+            this.entries.set(updatedLogs);
+            this.logForm.reset();
+            this.selectedTags = [];
+        } catch (error) {
+            console.error('Falha ao salvar. Verifique sua conexão com internet.');
+        } finally {
+            this.isSaving.set(false);
+        }
 
         this.logForm.patchValue({
             last_task: '',
@@ -104,13 +126,8 @@ export class DiaryComponent implements OnInit, OnDestroy {
         });
     }
 
-    parseTags(tags: string | string[]): string[] {
-        if (Array.isArray(tags)) return tags;
-        try {
-            return JSON.parse(tags);
-        } catch {
-            return [];
-        }
+    parseTags(tags: string[]): string[] {
+        return tags || [];
     }
 
     toggleTag(tag: string) {

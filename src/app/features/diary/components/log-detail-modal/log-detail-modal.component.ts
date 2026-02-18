@@ -17,13 +17,8 @@ export class LogDetailModalComponent {
         this.onClose();
     }
 
-    parseTags(tags: string | string[]): string[] {
-        if (Array.isArray(tags)) return tags;
-        try {
-            return JSON.parse(tags);
-        } catch {
-            return [];
-        }
+    parseTags(tags: string[]): string[] {
+        return tags || [];
     }
 
     onClose() {

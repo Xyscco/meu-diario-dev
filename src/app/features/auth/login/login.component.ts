@@ -39,7 +39,7 @@ export class LoginComponent {
         const { password } = this.loginForm.value;
         const success = await this.authService.login(password!);
         if (!success) {
-            this.errorMessage.set('Senha incorreta.');
+            this.errorMessage.set('Senha incorreta ou problema de conexão. Verifique sua internet.');
         }
     }
 
@@ -59,7 +59,7 @@ export class LoginComponent {
 
         const success = await this.authService.setupPassword(password!);
         if (!success) {
-            this.errorMessage.set('Erro ao definir senha.');
+            this.errorMessage.set('Erro ao definir senha. Verifique sua conexão com internet.');
         }
     }
 
