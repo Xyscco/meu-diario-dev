@@ -52,7 +52,7 @@
             "styles": [
               "src/styles.css"
             ],
-            "outputPath": "../../dist/renderer"
+            "outputPath": "dist"
           },
           "configurations": {
             "production": {
