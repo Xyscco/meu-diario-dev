@@ -57,6 +57,33 @@
                 }
             </div>
 
+            <!-- Filtros por Épico -->
+            @if (projectEpics().length > 0) {
+                <div class="flex gap-2 flex-wrap items-center">
+                    <span class="text-xs text-[#6c7086] uppercase font-bold">Épico:</span>
+                    <button 
+                        (click)="selectedEpicFilter.set(null)"
+                        class="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                        [ngClass]="selectedEpicFilter() === null ? 'bg-[#f5c2e7] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                        Todos
+                    </button>
+                    <button 
+                        (click)="selectedEpicFilter.set('')"
+                        class="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                        [ngClass]="selectedEpicFilter() === '' ? 'bg-[#f5c2e7] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                        Sem épico
+                    </button>
+                    @for (epic of projectEpics(); track epic.id) {
+                        <button 
+                            (click)="selectedEpicFilter.set(epic.id!)"
+                            class="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                            [ngClass]="selectedEpicFilter() === epic.id ? 'bg-[#f5c2e7] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                            {{ epic.name }}
+                        </button>
+                    }
+                </div>
+            }
+
             <!-- Modal Criar Tarefa -->
             @if (showCreateTaskForm()) {
                 <div class="fixed inset-0 bg-[#000]/40 flex items-center justify-center z-50 p-6">
@@ -78,6 +105,18 @@
                                 <textarea formControlName="description" rows="3"
                                     class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"
                                     placeholder="Detalhes da tarefa..."></textarea>
+                            </div>
+
+                            <!-- Épico -->
+                            <div>
+                                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Épico (Opcional)</label>
+                                <select formControlName="epic_id"
+                                    class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all">
+                                    <option value="">Sem épico</option>
+                                    @for (epic of projectEpics(); track epic.id) {
+                                        <option [value]="epic.id">{{ epic.name }}</option>
+                                    }
+                                </select>
                             </div>
 
                             <!-- Tags -->
@@ -128,6 +167,15 @@
                                 @if (task.description) {
                                     <p class="text-xs text-[#a6adc8] mb-3 line-clamp-2">{{ task.description }}</p>
                                 }
+                                @if (task.tags && task.tags.length > 0) {
+                                    <div class="flex flex-wrap gap-1 mb-3">
+                                        @for (tag of task.tags; track tag) {
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-[#313244] text-[#cba6f7]">
+                                                {{ tag }}
+                                            </span>
+                                        }
+                                    </div>
+                                }
                                 <div class="flex gap-1">
                                     <button 
                                         (click)="onUpdateTaskStatus(task.id!, 'fazendo')"
@@ -163,6 +211,15 @@
                                 <p class="text-sm font-medium text-[#cdd6f4] mb-2">{{ task.title }}</p>
                                 @if (task.description) {
                                     <p class="text-xs text-[#a6adc8] mb-3 line-clamp-2">{{ task.description }}</p>
+                                }
+                                @if (task.tags && task.tags.length > 0) {
+                                    <div class="flex flex-wrap gap-1 mb-3">
+                                        @for (tag of task.tags; track tag) {
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-[#313244] text-[#cba6f7]">
+                                                {{ tag }}
+                                            </span>
+                                        }
+                                    </div>
                                 }
                                 <div class="flex gap-1">
                                     <button 
@@ -204,6 +261,15 @@
                                 <p class="text-sm font-medium text-[#cdd6f4] line-through mb-2">{{ task.title }}</p>
                                 @if (task.description) {
                                     <p class="text-xs text-[#a6adc8] mb-3 line-clamp-2 line-through">{{ task.description }}</p>
+                                }
+                                @if (task.tags && task.tags.length > 0) {
+                                    <div class="flex flex-wrap gap-1 mb-3">
+                                        @for (tag of task.tags; track tag) {
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-[#313244] text-[#6c7086]">
+                                                {{ tag }}
+                                            </span>
+                                        }
+                                    </div>
                                 }
                                 @if (task.completed_at) {
                                     <p class="text-xs text-[#6c7086] mb-3">Concluído em {{ task.completed_at | date:'short' }}</p>
@@ -249,6 +315,17 @@
                                 <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Descrição</label>
                                 <textarea formControlName="description" rows="3"
                                     class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"></textarea>
+                            </div>
+                            <!-- Épico -->
+                            <div>
+                                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Épico (Opcional)</label>
+                                <select formControlName="epic_id"
+                                    class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all">
+                                    <option value="">Sem épico</option>
+                                    @for (epic of projectEpics(); track epic.id) {
+                                        <option [value]="epic.id">{{ epic.name }}</option>
+                                    }
+                                </select>
                             </div>
                             <!-- Tags -->
                             <div>

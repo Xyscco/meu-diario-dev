@@ -24,9 +24,9 @@ export class TaskService {
             this.isLoading.set(true);
             const { data, error } = await supabase
                 .from('tasks')
-                .select('*')
+                .select('*, epic:epics(id, name)')
                 .eq('project_id', projectId)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: true });
 
             if (error) throw error;
 
@@ -53,7 +53,8 @@ export class TaskService {
         title: string,
         description?: string,
         status: TaskStatus = 'backlog',
-        tags: string[] = []
+        tags: string[] = [],
+        epic_id?: string
     ): Promise<{ success: boolean; error?: string; task?: Task }> {
         try {
             // Obter o user_id do usuário autenticado
@@ -70,9 +71,10 @@ export class TaskService {
                     description,
                     status,
                     tags,
+                    epic_id: epic_id || null,
                     user_id: user.id
                 })
-                .select()
+                .select('*, epic:epics(id, name)')
                 .single();
 
             if (error) throw error;

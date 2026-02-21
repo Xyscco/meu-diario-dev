@@ -3,13 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../core/services/project.service';
 import { AuthService } from '../../core/services/auth.service';
+import { EpicService } from '../../core/services/epic.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { Project, ProjectStatus, PROJECT_STATUS_LIST, PROJECT_STATUS_COLORS } from '../../core/models/project.model';
 import { TasksModalComponent } from './components/tasks-modal/tasks-modal.component';
+import { EpicsModalComponent } from './components/epics-modal/epics-modal.component';
 
 @Component({
     selector: 'app-projects',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, TasksModalComponent],
+    imports: [CommonModule, ReactiveFormsModule, TasksModalComponent, EpicsModalComponent],
     templateUrl: './projects.component.html',
     styles: [`
     .draggable-region {
@@ -21,6 +24,8 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     private fb = inject(FormBuilder);
     projectService = inject(ProjectService);
     private authService = inject(AuthService);
+    epicService = inject(EpicService);
+    notificationService = inject(NotificationService);
 
     projectSelected = output<Project>();
 
@@ -28,7 +33,9 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     showCreateModal = signal(false);
     showEditModal = signal(false);
     showTasksModal = signal(false);
+    showEpicsModal = signal(false);
     projectWithTasks = signal<Project | null>(null);
+    projectWithEpics = signal<Project | null>(null);
     projectToEdit = signal<Project | null>(null);
     isCreating = signal(false);
     isUpdating = signal(false);
@@ -87,6 +94,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
         if (result.success) {
             this.createForm.reset();
             this.showCreateModal.set(false);
+            this.notificationService.showSuccess('Projeto criado com sucesso.');
         } else {
             this.errorMessage.set(result.error || 'Erro ao criar projeto.');
         }
@@ -95,12 +103,18 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     }
 
     async updateStatus(projectId: string, status: ProjectStatus): Promise<void> {
-        await this.projectService.updateProjectStatus(projectId, status);
+        const result = await this.projectService.updateProjectStatus(projectId, status);
+        if (result.success) {
+            this.notificationService.showSuccess('Status do projeto atualizado.');
+        }
     }
 
     async deleteProject(projectId: string): Promise<void> {
         if (confirm('Tem certeza que deseja deletar este projeto?')) {
-            await this.projectService.deleteProject(projectId);
+            const result = await this.projectService.deleteProject(projectId);
+            if (result.success) {
+                this.notificationService.showSuccess('Projeto deletado com sucesso.');
+            }
         }
     }
 
@@ -138,6 +152,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
 
         if (result.success) {
             this.closeEditModal();
+            this.notificationService.showSuccess('Projeto atualizado com sucesso.');
         } else {
             this.errorMessage.set(result.error || 'Erro ao editar projeto.');
         }
@@ -154,6 +169,17 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     closeTasksModal(): void {
         this.showTasksModal.set(false);
         this.projectWithTasks.set(null);
+    }
+
+    openEpicsModal(project: Project, event?: Event): void {
+        if (event) event.stopPropagation();
+        this.projectWithEpics.set(project);
+        this.showEpicsModal.set(true);
+    }
+
+    closeEpicsModal(): void {
+        this.showEpicsModal.set(false);
+        this.projectWithEpics.set(null);
     }
 
     selectProject(project: Project): void {

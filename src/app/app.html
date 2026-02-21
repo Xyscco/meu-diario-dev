@@ -4,6 +4,9 @@
 <!-- PWA Prompt -->
 <app-pwa-prompt />
 
+<!-- Notifications -->
+<app-notification-toast />
+
 <!-- App is now just a shell for features -->
 @if (authService.isAuthenticated()) {
   @if (currentPage() === 'projects') {

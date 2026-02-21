@@ -129,6 +129,11 @@
                             Tarefas
                         </button>
                         <button 
+                            (click)="openEpicsModal(project, $event)"
+                            class="px-3 py-1 rounded text-xs bg-[#f5c2e7]/20 text-[#f5c2e7] hover:bg-[#f5c2e7]/30 transition-all">
+                            Épicos
+                        </button>
+                        <button 
                             (click)="openEditModal(project, $event)"
                             class="px-3 py-1 rounded text-xs bg-[#cba6f7]/20 text-[#cba6f7] hover:bg-[#cba6f7]/30 transition-all">
                             Editar
@@ -242,4 +247,12 @@
         [project]="projectWithTasks()"
         (closeModal)="closeTasksModal()">
     </app-tasks-modal>
+}
+
+<!-- Modal Gerenciar Épicos -->
+@if (showEpicsModal()) {
+    <app-epics-modal 
+        [project]="projectWithEpics()"
+        (closeModal)="closeEpicsModal()">
+    </app-epics-modal>
 }

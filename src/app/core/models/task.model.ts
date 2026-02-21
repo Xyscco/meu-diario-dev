@@ -1,3 +1,5 @@
+import { Epic } from './epic.model';
+
 export type TaskStatus = 'backlog' | 'fazendo' | 'concluida';
 
 export interface Task {
@@ -11,6 +13,8 @@ export interface Task {
     status: TaskStatus;    // Status: backlog, fazendo ou concluida
     completed_at?: string | null; // Data de conclusão (quando status = concluida)
     tags?: string[];       // Tags associadas à tarefa
+    epic_id?: string;      // UUID do épico (opcional)
+    epic?: Epic;           // Dados do épico (quando incluído via join)
 }
 
 export const TASK_STATUS_LIST: TaskStatus[] = [

@@ -1,0 +1,182 @@
+<div class="fixed inset-0 bg-[#0f1115] flex flex-col z-50">
+    <!-- Header -->
+    <div class="bg-[#11111b] border-b border-[#313244] p-4 flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-[#cdd6f4]">Épicos do Projeto</h2>
+            <p class="text-xs text-[#a6adc8] mt-1">{{ project()?.name }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button
+                (click)="showCreateForm.set(!showCreateForm())"
+                class="hidden sm:inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] font-bold transition-all max-w-[150px] overflow-hidden whitespace-nowrap"
+                title="Novo Épico">
+                + Novo Épico
+            </button>
+
+            <button
+                (click)="showCreateForm.set(!showCreateForm())"
+                class="sm:hidden p-2 rounded-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] font-bold transition-all"
+                aria-label="Novo Épico">
+                +
+            </button>
+
+            <button
+                (click)="onClose()"
+                class="text-[#6c7086] hover:text-white text-lg">✕</button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-auto p-6 custom-scrollbar max-w-4xl mx-auto w-full">
+        @if (errorMessage()) {
+            <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-lg text-sm mb-6">
+                {{ errorMessage() }}
+            </div>
+        }
+
+        <!-- Modal Criar Épico -->
+        @if (showCreateForm()) {
+            <div class="fixed inset-0 bg-[#000]/40 flex items-center justify-center z-50 p-6">
+                <div class="max-w-md w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-[#cdd6f4]">Novo Épico</h3>
+                        <button (click)="showCreateForm.set(false)" class="text-[#6c7086]">✕</button>
+                    </div>
+                    <form [formGroup]="createEpicForm" (ngSubmit)="onCreateEpic()" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Nome do Épico</label>
+                            <input type="text" formControlName="name" autofocus
+                                class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]"
+                                placeholder="Ex: Autenticação de Usuários">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Foco (Opcional)</label>
+                            <textarea formControlName="focus" rows="3"
+                                class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"
+                                placeholder="Objetivo ou escopo deste épico..."></textarea>
+                        </div>
+
+                        <div class="flex gap-2 pt-2">
+                            <button type="button" (click)="showCreateForm.set(false)"
+                                class="flex-1 bg-[#313244] hover:bg-[#45475a] text-[#a6adc8] font-bold py-2 px-4 rounded-lg transition-all">
+                                Cancelar
+                            </button>
+                            <button type="submit" [disabled]="createEpicForm.invalid || isCreating()"
+                                class="flex-1 bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] font-bold py-2 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ isCreating() ? 'Criando...' : 'Criar Épico' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <!-- Modal Editar Épico -->
+        @if (selectedEpicForEdit()) {
+            <div class="fixed inset-0 bg-[#000]/40 flex items-center justify-center z-50 p-6">
+                <div class="max-w-md w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-[#cdd6f4]">Editar Épico</h3>
+                        <button (click)="selectedEpicForEdit.set(null)" class="text-[#6c7086]">✕</button>
+                    </div>
+                    <form [formGroup]="editEpicForm" (ngSubmit)="onSaveEditEpic()" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Nome do Épico</label>
+                            <input type="text" formControlName="name"
+                                class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Foco (Opcional)</label>
+                            <textarea formControlName="focus" rows="3"
+                                class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"></textarea>
+                        </div>
+
+                        <div class="flex gap-2 pt-2">
+                            <button type="button" (click)="selectedEpicForEdit.set(null)"
+                                class="flex-1 bg-[#313244] hover:bg-[#45475a] text-[#a6adc8] font-bold py-2 px-4 rounded-lg transition-all">
+                                Cancelar
+                            </button>
+                            <button type="submit" [disabled]="editEpicForm.invalid"
+                                class="flex-1 bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] font-bold py-2 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <!-- Lista de Épicos -->
+        <div class="space-y-4">
+            @if (projectEpics().length === 0) {
+                <div class="text-center py-12">
+                    <p class="text-[#6c7086] text-sm">Nenhum épico criado ainda.</p>
+                    <p class="text-[#45475a] text-xs mt-1">Clique em "Novo Épico" para começar.</p>
+                </div>
+            } @else {
+                @for (epic of projectEpics(); track epic.id) {
+                    <div class="bg-[#181825] border border-[#313244] rounded-lg p-4 hover:border-[#cba6f7] transition-all">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        (click)="toggleExpandEpic(epic.id)"
+                                        class="text-[#a6adc8] hover:text-[#cba6f7] transition-all">
+                                        {{ expandedEpicId() === epic.id ? '▼' : '▶' }}
+                                    </button>
+                                    <h3 class="text-base font-bold text-[#cdd6f4] truncate">{{ epic.name }}</h3>
+                                </div>
+                                @if (epic.focus) {
+                                    <p class="text-sm text-[#a6adc8] mt-1 ml-6">{{ epic.focus }}</p>
+                                }
+                                <div class="flex items-center gap-4 mt-2 ml-6 text-xs text-[#6c7086]">
+                                    <span>{{ getEpicTaskCount(epic.id) }} tarefa(s)</span>
+                                    <span>{{ getEpicCompletedCount(epic.id) }} concluída(s)</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button
+                                    (click)="openEditEpic(epic)"
+                                    class="text-[#a6adc8] hover:text-[#cba6f7] text-sm transition-all"
+                                    title="Editar">
+                                    ✏️
+                                </button>
+                                <button
+                                    (click)="onDeleteEpic(epic.id!)"
+                                    class="text-[#a6adc8] hover:text-[#f38ba8] text-sm transition-all"
+                                    title="Deletar">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Tarefas Expandida -->
+                        @if (expandedEpicId() === epic.id) {
+                            <div class="mt-4 ml-6 border-l-2 border-[#313244] pl-4">
+                                @if (getEpicTasks(epic.id).length === 0) {
+                                    <p class="text-xs text-[#6c7086]">Nenhuma tarefa vinculada a este épico.</p>
+                                } @else {
+                                    <ul class="space-y-2">
+                                        @for (task of getEpicTasks(epic.id); track task.id) {
+                                            <li class="flex items-start gap-2 text-sm">
+                                                <span
+                                                    class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                                                    [style.background-color]="task.status === 'concluida' ? '#94e2d5' : task.status === 'fazendo' ? '#a6e3a1' : '#f5c2e7'">
+                                                </span>
+                                                <span class="text-[#cdd6f4]" [class.line-through]="task.status === 'concluida'" [class.text-[#6c7086]]="task.status === 'concluida'">
+                                                    {{ task.title }}
+                                                </span>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

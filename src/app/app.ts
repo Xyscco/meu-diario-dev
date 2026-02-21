@@ -5,6 +5,7 @@ import { LoginComponent } from './features/auth/login/login.component';
 import { DailyReportComponent } from './features/diary/daily-report/daily-report.component';
 import { OfflineBannerComponent } from './shared/components/offline-banner.component';
 import { PwaPromptComponent } from './shared/components/pwa-prompt.component';
+import { NotificationToastComponent } from './shared/components/notification-toast.component';
 import { AuthService } from './core/services/auth.service';
 import { ProjectService } from './core/services/project.service';
 import { PwaService } from './core/services/pwa.service';
@@ -23,7 +24,8 @@ export type PageState = 'projects' | 'diary' | 'daily-report';
     LoginComponent,
     DailyReportComponent,
     OfflineBannerComponent,
-    PwaPromptComponent
+    PwaPromptComponent,
+    NotificationToastComponent
   ],
   templateUrl: './app.html',
 })

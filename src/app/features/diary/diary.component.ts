@@ -10,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
 import { TaskService } from '../../core/services/task.service';
 import { LogDetailModalComponent } from './components/log-detail-modal/log-detail-modal.component';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
     selector: 'app-diary',
@@ -29,6 +30,7 @@ export class DiaryComponent implements OnInit, OnDestroy {
     authService = inject(AuthService);
     projectService = inject(ProjectService);
     taskService = inject(TaskService);
+    notificationService = inject(NotificationService);
 
     backToProjects = output<void>();
     goToDailyReport = output<void>();
@@ -158,6 +160,7 @@ export class DiaryComponent implements OnInit, OnDestroy {
             this.entries.set(updatedLogs);
             this.logForm.reset();
             this.selectedTags = [];
+            this.notificationService.showSuccess('Registro salvo com sucesso.');
         } catch (error) {
             console.error('Falha ao salvar. Verifique sua conexão com internet.');
         } finally {
