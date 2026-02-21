@@ -35,6 +35,7 @@ export class DiaryComponent implements OnInit, OnDestroy {
     projectService = inject(ProjectService);
 
     backToProjects = output<void>();
+    goToDailyReport = output<void>();
 
     // State
     entries = signal<LogEntry[]>([]);
@@ -53,6 +54,10 @@ export class DiaryComponent implements OnInit, OnDestroy {
 
     goBackToProjects() {
         this.backToProjects.emit();
+    }
+
+    navigateToDailyReport() {
+        this.goToDailyReport.emit();
     }
 
     openDetail(entry: LogEntry) {
@@ -75,7 +80,9 @@ export class DiaryComponent implements OnInit, OnDestroy {
     logForm: FormGroup = this.fb.group({
         project: ['', Validators.required],
         last_task: ['', Validators.required],
-        next_steps: ['', Validators.required]
+        next_steps: ['', Validators.required],
+        is_next_day_task: [false],
+        impediments: ['']
     });
 
     constructor() {
@@ -125,7 +132,9 @@ export class DiaryComponent implements OnInit, OnDestroy {
             project: formVal.project,
             last_task: formVal.last_task,
             next_steps: formVal.next_steps,
-            tags: [...this.selectedTags]
+            tags: [...this.selectedTags],
+            is_next_day_task: formVal.is_next_day_task || false,
+            impediments: formVal.impediments || ''
         };
 
         try {
@@ -140,6 +149,8 @@ export class DiaryComponent implements OnInit, OnDestroy {
         }
 
         this.logForm.patchValue({
+            is_next_day_task: false,
+            impediments: '',
             last_task: '',
             next_steps: ''
         });

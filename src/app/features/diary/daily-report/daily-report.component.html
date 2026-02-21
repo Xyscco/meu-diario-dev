@@ -1,0 +1,160 @@
+<div class="min-h-screen bg-[#1e1e2e] text-[#cdd6f4] font-sans selection:bg-[#f5c2e7] selection:text-[#1e1e2e] pb-10">
+
+    <!-- Drag Region for Electron Window -->
+    <div class="h-8 w-full bg-[#181825] draggable-region flex items-center justify-center text-xs text-[#6c7086] select-none">
+        Relatório Diário - Diário DEV
+    </div>
+
+    <!-- Header -->
+    <header class="border-b border-[#313244] bg-[#11111b]">
+        <div class="max-w-5xl mx-auto px-6 py-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button
+                        (click)="goBackToDiary()"
+                        class="px-3 py-2 rounded-lg bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] text-sm font-semibold transition-all">
+                        ← Voltar ao Diário
+                    </button>
+                    <div class="h-8 border-l border-[#313244]"></div>
+                    <div class="w-12 h-12 bg-gradient-to-tr from-[#89b4fa] to-[#74c7ec] rounded-xl flex items-center justify-center shadow-lg shadow-[#89b4fa]/20">
+                        <span class="text-2xl">📊</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight text-[#cdd6f4]">
+                            Relatório Diário - {{ currentProject()?.name || 'DevContext' }}
+                        </h1>
+                        <p class="text-xs text-[#a6adc8]">
+                            Resumo do que foi realizado hoje
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-2xl font-light text-[#89b4fa]">{{ currentTime | date:'HH:mm' }}</p>
+                        <p class="text-xs text-[#a6adc8] uppercase tracking-widest">{{ currentTime | date:'EEEE, d MMM' }}</p>
+                    </div>
+                    <button
+                        (click)="copyReportToClipboard()"
+                        class="px-4 py-2 rounded-lg bg-[#a6e3a1] hover:bg-[#a6e3a1]/90 text-[#1e1e2e] text-sm font-semibold transition-all flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copiar Relatório
+                    </button>
+                    <button (click)="logout()"
+                        class="p-2 rounded-lg bg-[#313244] hover:bg-red-500/20 text-[#a6adc8] hover:text-red-400 transition-all group"
+                        title="Sair">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-8 space-y-6">
+
+        <!-- Hoje (Realizado) -->
+        <section class="bg-[#181825] border border-[#313244] rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-3xl">🗓️</span>
+                <h2 class="text-2xl font-bold text-[#a6e3a1]">Hoje (Realizado)</h2>
+            </div>
+            
+            @if (todayCompleted().length > 0) {
+                <div class="space-y-4">
+                    @for (entry of todayCompleted(); track entry.uuid) {
+                        <div class="bg-[#1e1e2e] border border-[#313244] rounded-xl p-5 hover:border-[#a6e3a1] transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-[#89b4fa] bg-[#89b4fa]/10 px-3 py-1 rounded-full">
+                                        {{ entry.project }}
+                                    </span>
+                                    @if (entry.tags && entry.tags.length > 0) {
+                                        @for (tag of entry.tags; track tag) {
+                                            <span class="text-xs text-[#6c7086] bg-[#313244] px-2 py-0.5 rounded">#{{ tag }}</span>
+                                        }
+                                    }
+                                </div>
+                                <span class="text-xs text-[#6c7086]">{{ entry.created_at | date:'HH:mm' }}</span>
+                            </div>
+                            <p class="text-[#cdd6f4] leading-relaxed">{{ entry.last_task }}</p>
+                        </div>
+                    }
+                </div>
+            } @else {
+                <div class="text-center py-10 border-2 border-dashed border-[#313244] rounded-xl">
+                    <p class="text-sm text-[#6c7086]">Nenhuma tarefa concluída hoje.</p>
+                </div>
+            }
+        </section>
+
+        <!-- Próximo Dia (Foco) -->
+        <section class="bg-[#181825] border border-[#313244] rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-3xl">➡️</span>
+                <h2 class="text-2xl font-bold text-[#fab387]">Próximo Dia (Foco)</h2>
+            </div>
+            
+            @if (nextDayTasks().length > 0) {
+                <div class="space-y-4">
+                    @for (entry of nextDayTasks(); track entry.uuid) {
+                        <div class="bg-[#1e1e2e] border border-[#313244] rounded-xl p-5 hover:border-[#fab387] transition-all">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-[#89b4fa] bg-[#89b4fa]/10 px-3 py-1 rounded-full">
+                                        {{ entry.project }}
+                                    </span>
+                                    @if (entry.tags && entry.tags.length > 0) {
+                                        @for (tag of entry.tags; track tag) {
+                                            <span class="text-xs text-[#6c7086] bg-[#313244] px-2 py-0.5 rounded">#{{ tag }}</span>
+                                        }
+                                    }
+                                </div>
+                                <span class="text-xs text-[#6c7086]">{{ entry.created_at | date:'dd/MM' }}</span>
+                            </div>
+                            <p class="text-[#cdd6f4] text-lg font-medium leading-relaxed">{{ entry.next_steps }}</p>
+                        </div>
+                    }
+                </div>
+            } @else {
+                <div class="text-center py-10 border-2 border-dashed border-[#313244] rounded-xl">
+                    <p class="text-sm text-[#6c7086]">Nenhuma tarefa planejada para o próximo dia.</p>
+                </div>
+            }
+        </section>
+
+        <!-- Impedimentos -->
+        <section class="bg-[#181825] border border-[#313244] rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <span class="text-3xl">🚫</span>
+                <h2 class="text-2xl font-bold text-[#f38ba8]">Impedimentos</h2>
+            </div>
+            
+            @if (impediments().length > 0) {
+                <div class="space-y-4">
+                    @for (entry of impediments(); track entry.uuid) {
+                        <div class="bg-[#1e1e2e] border border-[#f38ba8]/30 rounded-xl p-5">
+                            <div class="flex items-start justify-between mb-3">
+                                <span class="text-xs font-bold text-[#89b4fa] bg-[#89b4fa]/10 px-3 py-1 rounded-full">
+                                    {{ entry.project }}
+                                </span>
+                                <span class="text-xs text-[#6c7086]">{{ entry.created_at | date:'HH:mm' }}</span>
+                            </div>
+                            <p class="text-[#f38ba8] leading-relaxed">{{ entry.impediments }}</p>
+                        </div>
+                    }
+                </div>
+            } @else {
+                <div class="text-center py-10 border-2 border-dashed border-[#313244] rounded-xl">
+                    <p class="text-sm text-[#a6e3a1]">✓ Sem impedimentos.</p>
+                </div>
+            }
+        </section>
+
+    </main>
+</div>

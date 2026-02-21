@@ -15,6 +15,12 @@
                     class="px-3 py-2 rounded-lg bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] text-sm font-semibold transition-all">
                     ← Voltar
                 </button>
+                <button
+                    (click)="navigateToDailyReport()"
+                    class="px-3 py-2 rounded-lg bg-[#89b4fa] hover:bg-[#89b4fa]/90 text-[#1e1e2e] text-sm font-semibold transition-all flex items-center gap-2">
+                    <span>📊</span>
+                    Relatório Diário
+                </button>
                 <div class="h-8 border-l border-[#313244]"></div>
                 <div
                     class="w-12 h-12 bg-gradient-to-tr from-[#cba6f7] to-[#f5c2e7] rounded-xl flex items-center justify-center shadow-lg shadow-[#cba6f7]/20">
@@ -131,6 +137,23 @@
                         <textarea formControlName="next_steps" rows="4"
                             class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#fab387] focus:border-transparent outline-none transition-all resize-none placeholder-[#45475a]"
                             placeholder="O detalhe crucial para lembrar amanhã..."></textarea>
+                        
+                        <!-- Checkbox para tarefa do próximo dia -->
+                        <div class="mt-3 flex items-center gap-2">
+                            <input type="checkbox" formControlName="is_next_day_task" id="is_next_day_task"
+                                class="w-4 h-4 text-[#fab387] bg-[#1e1e2e] border-[#313244] rounded focus:ring-2 focus:ring-[#fab387]">
+                            <label for="is_next_day_task" class="text-sm text-[#a6adc8] cursor-pointer">
+                                ➡️ Adicionar ao foco do próximo dia
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Campo de impedimentos -->
+                    <div>
+                        <label class="block text-xs font-bold text-[#f38ba8] uppercase mb-2">🚫 Impedimentos (opcional)</label>
+                        <textarea formControlName="impediments" rows="2"
+                            class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#f38ba8] focus:border-transparent outline-none transition-all resize-none placeholder-[#45475a]"
+                            placeholder="Descreva bloqueios, dependências ou problemas encontrados..."></textarea>
                     </div>
 
                     <!-- Tags -->

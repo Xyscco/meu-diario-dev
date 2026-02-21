@@ -9,7 +9,9 @@
   @if (currentPage() === 'projects') {
     <app-projects (projectSelected)="navigateToDiary($event)"></app-projects>
   } @else if (currentPage() === 'diary') {
-    <app-diary (backToProjects)="navigateToProjects()"></app-diary>
+    <app-diary (backToProjects)="navigateToProjects()" (goToDailyReport)="navigateToDailyReport()"></app-diary>
+  } @else if (currentPage() === 'daily-report') {
+    <app-daily-report (backToDiary)="currentPage.set('diary')" (backToProjects)="navigateToProjects()"></app-daily-report>
   }
 } @else {
   <app-login></app-login>

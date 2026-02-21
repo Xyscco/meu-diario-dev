@@ -7,4 +7,6 @@ export interface LogEntry {
     last_task: string;     // Descrição do trabalho realizado
     next_steps: string;    // Próximas ações críticas
     tags: string[];        // Array nativo (compatível com PostgreSQL TEXT[])
+    is_next_day_task?: boolean; // Indica se é uma tarefa para o próximo dia
+    impediments?: string;  // Impedimentos encontrados
 }

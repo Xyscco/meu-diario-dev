@@ -2,6 +2,7 @@ import { Component, inject, signal, effect } from '@angular/core';
 import { DiaryComponent } from './features/diary/diary.component';
 import { ProjectsComponent } from './features/projects/projects.component';
 import { LoginComponent } from './features/auth/login/login.component';
+import { DailyReportComponent } from './features/diary/daily-report/daily-report.component';
 import { OfflineBannerComponent } from './shared/components/offline-banner.component';
 import { PwaPromptComponent } from './shared/components/pwa-prompt.component';
 import { AuthService } from './core/services/auth.service';
@@ -10,7 +11,7 @@ import { PwaService } from './core/services/pwa.service';
 import { CommonModule } from '@angular/common';
 import { Project } from './core/models/project.model';
 
-export type PageState = 'projects' | 'diary';
+export type PageState = 'projects' | 'diary' | 'daily-report';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +21,7 @@ export type PageState = 'projects' | 'diary';
     DiaryComponent,
     ProjectsComponent,
     LoginComponent,
+    DailyReportComponent,
     OfflineBannerComponent,
     PwaPromptComponent
   ],
@@ -55,6 +57,10 @@ export class App {
   navigateToProjects() {
     this.projectService.setCurrentProject(null);
     this.currentPage.set('projects');
+  }
+
+  navigateToDailyReport() {
+    this.currentPage.set('daily-report');
   }
 }
 
