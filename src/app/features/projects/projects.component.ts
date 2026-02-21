@@ -4,11 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProjectService } from '../../core/services/project.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Project, ProjectStatus, PROJECT_STATUS_LIST, PROJECT_STATUS_COLORS } from '../../core/models/project.model';
+import { TasksModalComponent } from './components/tasks-modal/tasks-modal.component';
 
 @Component({
     selector: 'app-projects',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
+    imports: [CommonModule, ReactiveFormsModule, TasksModalComponent],
     templateUrl: './projects.component.html',
     styles: [`
     .draggable-region {
@@ -25,13 +26,23 @@ export class ProjectsComponent implements OnInit, OnDestroy {
 
     filterStatus = signal<ProjectStatus | null>('Em execução'); // Default: apenas ativos
     showCreateModal = signal(false);
+    showEditModal = signal(false);
+    showTasksModal = signal(false);
+    projectWithTasks = signal<Project | null>(null);
+    projectToEdit = signal<Project | null>(null);
     isCreating = signal(false);
+    isUpdating = signal(false);
     errorMessage = signal<string | null>(null);
     statusList = PROJECT_STATUS_LIST;
     currentTime = Date.now();
     private timeInterval: any;
 
     createForm = this.fb.group({
+        name: ['', [Validators.required, Validators.minLength(3)]],
+        description: ['']
+    });
+
+    editForm = this.fb.group({
         name: ['', [Validators.required, Validators.minLength(3)]],
         description: ['']
     });
@@ -91,6 +102,58 @@ export class ProjectsComponent implements OnInit, OnDestroy {
         if (confirm('Tem certeza que deseja deletar este projeto?')) {
             await this.projectService.deleteProject(projectId);
         }
+    }
+
+    openEditModal(project: Project, event?: Event): void {
+        if (event) event.stopPropagation();
+        this.projectToEdit.set(project);
+        this.editForm.patchValue({
+            name: project.name,
+            description: project.description || ''
+        });
+        this.showEditModal.set(true);
+    }
+
+    closeEditModal(): void {
+        this.showEditModal.set(false);
+        this.projectToEdit.set(null);
+        this.editForm.reset();
+        this.errorMessage.set(null);
+    }
+
+    async onEditProject(): Promise<void> {
+        if (this.editForm.invalid) return;
+
+        this.isUpdating.set(true);
+        this.errorMessage.set(null);
+
+        const project = this.projectToEdit();
+        if (!project?.id) return;
+
+        const { name, description } = this.editForm.value;
+        const result = await this.projectService.updateProject(project.id, {
+            name: name!,
+            description: description || undefined
+        });
+
+        if (result.success) {
+            this.closeEditModal();
+        } else {
+            this.errorMessage.set(result.error || 'Erro ao editar projeto.');
+        }
+
+        this.isUpdating.set(false);
+    }
+
+    openTasksModal(project: Project, event?: Event): void {
+        if (event) event.stopPropagation();
+        this.projectWithTasks.set(project);
+        this.showTasksModal.set(true);
+    }
+
+    closeTasksModal(): void {
+        this.showTasksModal.set(false);
+        this.projectWithTasks.set(null);
     }
 
     selectProject(project: Project): void {

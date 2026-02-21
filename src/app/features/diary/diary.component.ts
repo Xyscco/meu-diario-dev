@@ -8,6 +8,7 @@ import { LogService } from '../../core/services/log.service';
 import { LogEntry } from '../../core/models/log-entry.model';
 import { AuthService } from '../../core/services/auth.service';
 import { ProjectService } from '../../core/services/project.service';
+import { TaskService } from '../../core/services/task.service';
 import { LogDetailModalComponent } from './components/log-detail-modal/log-detail-modal.component';
 
 @Component({
@@ -33,6 +34,7 @@ export class DiaryComponent implements OnInit, OnDestroy {
     logService = inject(LogService);
     authService = inject(AuthService);
     projectService = inject(ProjectService);
+    taskService = inject(TaskService);
 
     backToProjects = output<void>();
     goToDailyReport = output<void>();
@@ -71,8 +73,13 @@ export class DiaryComponent implements OnInit, OnDestroy {
     // Computed
     latestEntry = computed(() => this.entries().length > 0 ? this.entries()[0] : null);
     history = computed(() => this.entries().slice(1));
+    completedTasks = computed(() => {
+        const project = this.currentProject();
+        if (!project?.id) return [];
+        return this.taskService.getCompletedTasks(project.id);
+    });
 
-    availableTags = ['Backend', 'Frontend', 'Database', 'Meeting', 'Bugfix', 'Deploy'];
+    availableTags = ['Backend', 'Frontend', 'Database', 'Meeting', 'Bugfix', 'Deploy', 'Conversão de dados', 'Suporte'];
     selectedTags: string[] = [];
 
     recognition: any;
@@ -97,6 +104,13 @@ export class DiaryComponent implements OnInit, OnDestroy {
             this.logForm.patchValue({ project: project.name });
         }
 
+        // Carregar tarefas do projeto
+        if (project?.id) {
+            await this.taskService.loadProjectTasks(project.id);
+            // Pré-preencher o campo last_task com tarefas concluídas
+            this.populateLastTaskWithCompletedTasks(project.id);
+        }
+
         // Carregar logs do projeto
         const logs = await this.logService.getLogs(project?.id);
         this.entries.set(logs);
@@ -104,6 +118,14 @@ export class DiaryComponent implements OnInit, OnDestroy {
         // Add online/offline listeners
         window.addEventListener('online', this.updateOnlineStatus);
         window.addEventListener('offline', this.updateOnlineStatus);
+    }
+
+    private populateLastTaskWithCompletedTasks(projectId: string) {
+        const completedTasks = this.taskService.getCompletedTasks(projectId);
+        if (completedTasks.length > 0) {
+            const taskTitles = completedTasks.map(t => `✓ ${t.title}`).join(', ');
+            this.logForm.patchValue({ last_task: taskTitles });
+        }
     }
 
     ngOnDestroy() {

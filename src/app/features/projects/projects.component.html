@@ -124,6 +124,16 @@
 
                     <div class="pt-4 border-t border-[#313244] flex justify-end gap-2">
                         <button 
+                            (click)="openTasksModal(project, $event)"
+                            class="px-3 py-1 rounded text-xs bg-[#94e2d5]/20 text-[#94e2d5] hover:bg-[#94e2d5]/30 transition-all">
+                            Tarefas
+                        </button>
+                        <button 
+                            (click)="openEditModal(project, $event)"
+                            class="px-3 py-1 rounded text-xs bg-[#cba6f7]/20 text-[#cba6f7] hover:bg-[#cba6f7]/30 transition-all">
+                            Editar
+                        </button>
+                        <button 
                             (click)="deleteProject(project.id!); $event.stopPropagation()"
                             class="px-3 py-1 rounded text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all">
                             Deletar
@@ -184,4 +194,52 @@
         </form>
     </div>
 </div>
+}
+
+<!-- Modal Editar Projeto -->
+@if (showEditModal()) {
+<div class="fixed inset-0 bg-[#000]/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
+    <div class="max-w-md w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl p-8 relative">
+        <button 
+            (click)="closeEditModal()"
+            class="absolute top-4 right-4 text-[#6c7086] hover:text-white">✕</button>
+
+        <h2 class="text-2xl font-bold mb-6 text-[#cdd6f4]">Editar Projeto</h2>
+
+        <form [formGroup]="editForm" (ngSubmit)="onEditProject()" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Nome do Projeto</label>
+                <input type="text" formControlName="name" autofocus
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]"
+                    placeholder="Ex: Landing Page">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Descrição (Opcional)</label>
+                <textarea formControlName="description" rows="3"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"
+                    placeholder="Descreva o propósito do projeto..."></textarea>
+            </div>
+
+            @if (errorMessage()) {
+                <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-xs text-center">
+                    {{ errorMessage() }}
+                </div>
+            }
+
+            <button type="submit" [disabled]="editForm.invalid || isUpdating()"
+                class="w-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] py-3 rounded-lg font-bold transition-all disabled:opacity-50">
+                {{ isUpdating() ? 'Atualizando...' : 'Salvar Alterações' }}
+            </button>
+        </form>
+    </div>
+</div>
+}
+
+<!-- Modal Gerenciar Tarefas -->
+@if (showTasksModal()) {
+    <app-tasks-modal 
+        [project]="projectWithTasks()"
+        (closeModal)="closeTasksModal()">
+    </app-tasks-modal>
 }

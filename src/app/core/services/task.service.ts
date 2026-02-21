@@ -1,0 +1,153 @@
+import { Injectable, signal, NgZone } from '@angular/core';
+import { supabase } from '../config/supabase.config';
+import { Task, TaskStatus } from '../models/task.model';
+
+@Injectable({
+    providedIn: 'root'
+})
+export class TaskService {
+    tasks = signal<Task[]>([]);
+    isLoading = signal<boolean>(false);
+
+    constructor(private ngZone: NgZone) {}
+
+    async loadProjectTasks(projectId: string): Promise<Task[]> {
+        try {
+            this.isLoading.set(true);
+            const { data, error } = await supabase
+                .from('tasks')
+                .select('*')
+                .eq('project_id', projectId)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            this.ngZone.run(() => {
+                this.tasks.set(data || []);
+            });
+
+            return data || [];
+        } catch (error) {
+            console.error('Erro ao carregar tarefas:', error);
+            return [];
+        } finally {
+            this.isLoading.set(false);
+        }
+    }
+
+    async createTask(
+        projectId: string,
+        title: string,
+        description?: string,
+        status: TaskStatus = 'backlog'
+    ): Promise<{ success: boolean; error?: string; task?: Task }> {
+        try {
+            // Obter o user_id do usuário autenticado
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user?.id) {
+                throw new Error('Usuário não autenticado');
+            }
+
+            const { data, error } = await supabase
+                .from('tasks')
+                .insert({
+                    project_id: projectId,
+                    title,
+                    description,
+                    status,
+                    user_id: user.id
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            this.ngZone.run(() => {
+                this.tasks.update(tasks => [data, ...tasks]);
+            });
+
+            return { success: true, task: data };
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Erro ao criar tarefa.';
+            console.error('Erro ao criar tarefa:', errorMessage);
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    async updateTaskStatus(taskId: string, status: TaskStatus): Promise<{ success: boolean; error?: string }> {
+        try {
+            const completed_at = status === 'concluida' ? new Date().toISOString() : null;
+
+            const { error } = await supabase
+                .from('tasks')
+                .update({ status, updated_at: new Date().toISOString(), completed_at })
+                .eq('id', taskId);
+
+            if (error) throw error;
+
+            this.ngZone.run(() => {
+                this.tasks.update(tasks =>
+                    tasks.map(t => t.id === taskId ? { ...t, status, completed_at } : t)
+                );
+            });
+
+            return { success: true };
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Erro ao atualizar status da tarefa.';
+            console.error('Erro ao atualizar tarefa:', errorMessage);
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    async updateTask(taskId: string, updates: Partial<Task>): Promise<{ success: boolean; error?: string }> {
+        try {
+            const { error } = await supabase
+                .from('tasks')
+                .update({ ...updates, updated_at: new Date().toISOString() })
+                .eq('id', taskId);
+
+            if (error) throw error;
+
+            this.ngZone.run(() => {
+                this.tasks.update(tasks =>
+                    tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
+                );
+            });
+
+            return { success: true };
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Erro ao atualizar tarefa.';
+            console.error('Erro ao atualizar tarefa:', errorMessage);
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    async deleteTask(taskId: string): Promise<{ success: boolean; error?: string }> {
+        try {
+            const { error } = await supabase
+                .from('tasks')
+                .delete()
+                .eq('id', taskId);
+
+            if (error) throw error;
+
+            this.ngZone.run(() => {
+                this.tasks.update(tasks => tasks.filter(t => t.id !== taskId));
+            });
+
+            return { success: true };
+        } catch (error: any) {
+            const errorMessage = error?.message || 'Erro ao deletar tarefa.';
+            console.error('Erro ao deletar tarefa:', errorMessage);
+            return { success: false, error: errorMessage };
+        }
+    }
+
+    getCompletedTasks(projectId: string): Task[] {
+        return this.tasks().filter(t => t.project_id === projectId && t.status === 'concluida');
+    }
+
+    getTasksByStatus(projectId: string, status: TaskStatus): Task[] {
+        return this.tasks().filter(t => t.project_id === projectId && t.status === status);
+    }
+}
