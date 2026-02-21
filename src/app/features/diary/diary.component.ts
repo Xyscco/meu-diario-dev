@@ -17,12 +17,6 @@ import { LogDetailModalComponent } from './components/log-detail-modal/log-detai
     imports: [CommonModule, FormsModule, ReactiveFormsModule, IconMic, IconSave, IconDatabase, LogDetailModalComponent],
     templateUrl: './diary.component.html',
     styles: [`
-    /* Custom Scrollbar for dark theme */
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #181825; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #585b70; }
-    
     .draggable-region {
       -webkit-app-region: drag; /* Electron specific: makes div draggable */
     }

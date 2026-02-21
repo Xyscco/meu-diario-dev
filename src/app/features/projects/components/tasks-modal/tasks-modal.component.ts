@@ -34,6 +34,11 @@ export class TasksModalComponent implements OnInit {
     taskStatusColors = TASK_STATUS_COLORS;
     taskStatusLabels = TASK_STATUS_LABELS;
 
+    // Tags (reusing the same available tags from diary)
+    availableTags = ['Backend', 'Frontend', 'Database', 'Meeting', 'Bugfix', 'Deploy', 'Conversão de dados', 'Suporte'];
+    createSelectedTags: string[] = [];
+    editSelectedTags: string[] = [];
+
     createTaskForm = this.fb.group({
         title: ['', [Validators.required, Validators.minLength(3)]],
         description: ['']
@@ -43,6 +48,22 @@ export class TasksModalComponent implements OnInit {
         title: ['', [Validators.required, Validators.minLength(3)]],
         description: ['']
     });
+
+    toggleCreateTag(tag: string) {
+        if (this.createSelectedTags.includes(tag)) {
+            this.createSelectedTags = this.createSelectedTags.filter(t => t !== tag);
+        } else {
+            this.createSelectedTags.push(tag);
+        }
+    }
+
+    toggleEditTag(tag: string) {
+        if (this.editSelectedTags.includes(tag)) {
+            this.editSelectedTags = this.editSelectedTags.filter(t => t !== tag);
+        } else {
+            this.editSelectedTags.push(tag);
+        }
+    }
 
     filteredTasks = computed(() => {
         const proj = this.project();
@@ -87,7 +108,9 @@ export class TasksModalComponent implements OnInit {
         const result = await this.taskService.createTask(
             this.project()!.id!,
             title!,
-            description || undefined
+            description || undefined,
+            'backlog',
+            this.createSelectedTags
         );
 
         if (result.success) {
@@ -98,6 +121,32 @@ export class TasksModalComponent implements OnInit {
         }
 
         this.isCreating.set(false);
+    }
+
+    openEditTask(task: Task) {
+        this.selectedTaskForEdit.set(task);
+        this.editTaskForm.patchValue({ title: task.title, description: task.description || '' });
+        this.editSelectedTags = task.tags ? [...task.tags] : [];
+    }
+
+    async onSaveEditTask(): Promise<void> {
+        const task = this.selectedTaskForEdit();
+        if (!task) return;
+        if (this.editTaskForm.invalid) return;
+
+        const { title, description } = this.editTaskForm.value;
+        const updates: Partial<Task> = {};
+        if (title != null) updates.title = title;
+        if (description != null) updates.description = description;
+        updates.tags = [...this.editSelectedTags];
+
+        const result = await this.taskService.updateTask(task.id!, updates);
+        if (!result.success) {
+            this.errorMessage.set(result.error || 'Erro ao atualizar tarefa.');
+            return;
+        }
+
+        this.selectedTaskForEdit.set(null);
     }
 
     async onUpdateTaskStatus(taskId: string, status: TaskStatus): Promise<void> {

@@ -10,6 +10,7 @@ export interface Task {
     description?: string;  // Descrição da tarefa
     status: TaskStatus;    // Status: backlog, fazendo ou concluida
     completed_at?: string | null; // Data de conclusão (quando status = concluida)
+    tags?: string[];       // Tags associadas à tarefa
 }
 
 export const TASK_STATUS_LIST: TaskStatus[] = [

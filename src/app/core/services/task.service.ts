@@ -11,6 +11,14 @@ export class TaskService {
 
     constructor(private ngZone: NgZone) {}
 
+    private normalizeStatus(raw?: string | null): TaskStatus {
+        if (!raw) return 'backlog';
+        const s = String(raw).toLowerCase();
+        if (s === 'concluída' || s === 'concluida' || s === 'finalizado' || s === 'finalizada') return 'concluida';
+        if (s === 'fazendo' || s === 'em execução' || s === 'em execucao') return 'fazendo';
+        return 'backlog';
+    }
+
     async loadProjectTasks(projectId: string): Promise<Task[]> {
         try {
             this.isLoading.set(true);
@@ -23,7 +31,12 @@ export class TaskService {
             if (error) throw error;
 
             this.ngZone.run(() => {
-                this.tasks.set(data || []);
+                // Normaliza o status vindo do banco para os valores esperados pelo frontend
+                const normalized = (data || []).map((t: any) => ({
+                    ...t,
+                    status: this.normalizeStatus(t.status),
+                }));
+                this.tasks.set(normalized as Task[]);
             });
 
             return data || [];
@@ -39,7 +52,8 @@ export class TaskService {
         projectId: string,
         title: string,
         description?: string,
-        status: TaskStatus = 'backlog'
+        status: TaskStatus = 'backlog',
+        tags: string[] = []
     ): Promise<{ success: boolean; error?: string; task?: Task }> {
         try {
             // Obter o user_id do usuário autenticado
@@ -55,6 +69,7 @@ export class TaskService {
                     title,
                     description,
                     status,
+                    tags,
                     user_id: user.id
                 })
                 .select()
@@ -63,7 +78,8 @@ export class TaskService {
             if (error) throw error;
 
             this.ngZone.run(() => {
-                this.tasks.update(tasks => [data, ...tasks]);
+                const task = { ...data, status: this.normalizeStatus((data as any)?.status), tags: (data as any)?.tags || [] } as Task;
+                this.tasks.update(tasks => [task, ...tasks]);
             });
 
             return { success: true, task: data };
@@ -78,16 +94,46 @@ export class TaskService {
         try {
             const completed_at = status === 'concluida' ? new Date().toISOString() : null;
 
-            const { error } = await supabase
+            // Tenta atualizar com o status fornecido
+            let res = await supabase
                 .from('tasks')
                 .update({ status, updated_at: new Date().toISOString(), completed_at })
                 .eq('id', taskId);
 
-            if (error) throw error;
+            if (res.error) {
+                // Se o erro for relacionado ao enum do Postgres, tentamos um fallback (ex.: variantes com acento)
+                const msg: string = String(res.error.message || '');
+                if (msg.includes('invalid input value for enum task_status')) {
+                    // Apenas um fallback conhecido: 'concluida' -> 'concluída'
+                    if (status === 'concluida') {
+                        const altStatus = 'concluída' as unknown as TaskStatus;
+                        const completedAtAlt = new Date().toISOString();
+                        const altRes = await supabase
+                            .from('tasks')
+                            .update({ status: altStatus, updated_at: new Date().toISOString(), completed_at: completedAtAlt })
+                            .eq('id', taskId);
+
+                        if (altRes.error) throw altRes.error;
+
+                        // Atualiza o estado local com o status normalizado (frontend usa 'concluida')
+                        this.ngZone.run(() => {
+                            this.tasks.update(tasks =>
+                                tasks.map(t => t.id === taskId ? { ...t, status: this.normalizeStatus(altStatus), completed_at: completedAtAlt } : t)
+                            );
+                        });
+
+                        return { success: true };
+                    }
+                }
+
+                throw res.error;
+            }
+
 
             this.ngZone.run(() => {
+                const canonical = this.normalizeStatus(status as string);
                 this.tasks.update(tasks =>
-                    tasks.map(t => t.id === taskId ? { ...t, status, completed_at } : t)
+                    tasks.map(t => t.id === taskId ? { ...t, status: canonical, completed_at } : t)
                 );
             });
 
@@ -109,8 +155,9 @@ export class TaskService {
             if (error) throw error;
 
             this.ngZone.run(() => {
+                const sanitizedUpdates = updates.status ? { ...updates, status: this.normalizeStatus(updates.status as string) } : updates;
                 this.tasks.update(tasks =>
-                    tasks.map(t => t.id === taskId ? { ...t, ...updates } : t)
+                    tasks.map(t => t.id === taskId ? { ...t, ...sanitizedUpdates } : t)
                 );
             });
 

@@ -9,13 +9,7 @@ import { LogEntry } from '../../../core/models/log-entry.model';
     selector: 'app-daily-report',
     standalone: true,
     imports: [CommonModule, DatePipe],
-    templateUrl: './daily-report.component.html',
-    styles: [`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #181825; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #585b70; }
-    `]
+    templateUrl: './daily-report.component.html'
 })
 export class DailyReportComponent implements OnInit {
     logService = inject(LogService);

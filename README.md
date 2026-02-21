@@ -48,12 +48,33 @@ DevContext é uma ferramenta de preservação de contexto que ajuda desenvolvedo
 - Barra lateral com histórico completo
 - Modal de detalhes para visualização expandida
 - Ordenação por data (mais recentes primeiro)
-� Gerenciamento de Projetos
+
+### 🗂️ Gerenciamento de Projetos
 - Criação e gestão de múltiplos projetos
+- Edição de nome e descrição de projetos existentes
 - Status de projetos: Aguardando, Em execução, Pausado, Finalizado, Cancelado
 - Descrição de projeto e timestamps de criação/atualização
 - Isolamento de dados por projeto via user_id (RLS)
-- Integração com sistema de logs
+- Integração com sistema de logs e tarefas
+
+### ✅ Gerenciamento de Tarefas
+- Sistema completo de gerenciamento de tarefas por projeto
+- Status de tarefas: Backlog, Fazendo, Concluída
+- Criação, edição e exclusão de tarefas
+- Tags para categorização de tarefas
+- Visualização organizada por status (estilo Kanban)
+- Filtro por status de tarefa
+- Marca automática de data de conclusão
+- Isolamento por usuário e projeto (RLS)
+
+### 📊 Relatório Diário
+- Visualização consolidada do trabalho do dia
+- Seções organizadas:
+  - **Hoje (Realizado)**: Tarefas completadas no dia atual
+  - **Próximo Dia (Foco)**: Tarefas planejadas para o dia seguinte
+  - **Impedimentos**: Obstáculos identificados
+- Funcionalidade de copiar relatório formatado para área de transferência
+- Ideal para standups e reuniões diárias
 
 ### 💾 Persistência de Dados
 - **Supabase**: Backend-as-a-Service com PostgreSQL
@@ -183,23 +204,79 @@ export interface LogEntry {
 ```
 
 ### Interface Project
-─────┐
-│ ProjectsComponent    │
-└──────────┬───────────┘
-           │
-           └──► ProjectService.createProject() ──► Supabase (projects table)
-           │
-           └──► ProjectService.loadProjects() ──► Carrega lista de projetos
 
-┌──────────────────────┐
-│  DiaryComponent      │
-└──────────┬───────────┘
+```typescript
+export interface Project {
+    id?: string;           // UUID do PostgreSQL
+    created_at?: string;   // Timestamp ISO
+    updated_at?: string;   // Timestamp ISO
+    user_id?: string;      // UUID do usuário (auth.users)
+    name: string;          // Nome do projeto
+    description?: string;  // Descrição do projeto
+    status: ProjectStatus; // Status do projeto
+}
+```
+
+### Interface Task
+
+```typescript
+export interface Task {
+    id?: string;           // UUID do PostgreSQL
+    created_at?: string;   // Timestamp ISO
+    updated_at?: string;   // Timestamp ISO
+    user_id?: string;      // UUID do usuário (auth.users)
+    project_id: string;    // UUID do projeto (obrigatório)
+    title: string;         // Título da tarefa
+    description?: string;  // Descrição da tarefa
+    status: TaskStatus;    // Status: backlog, fazendo ou concluida
+    completed_at?: string | null; // Data de conclusão
+    tags?: string[];       // Tags associadas à tarefa
+}
+
+export type TaskStatus = 'backlog' | 'fazendo' | 'concluida';
+```
+
+### Fluxo de Dados
+
+```
+┌─────────────────────┐
+│ ProjectsComponent   │
+└──────────┬──────────┘
            │
+           ├──► ProjectService.createProject() ──► Supabase (projects table)
+           ├──► ProjectService.updateProject() ──► Atualiza projeto
+           ├──► ProjectService.loadProjects() ──► Carrega lista de projetos
+           └──► Abre TasksModal ──────────────┐
+                                                │
+┌──────────────────────┐                       │
+│  DiaryComponent      │                       │
+└──────────┬───────────┘                       │
+           │                                   ▼
            ├──► LogService.saveLog(entry) ──► Supabase (log_entries table)
            │    └─► RLS Policy: usuario == auth.uid()
+           │                                   ┌──────────────────────┐
+           └──► LogService.getLogs(projectId?) │  TasksModal          │
+                 └─► Filtrado por projeto      └──────────┬───────────┘
+                                                           │
+                                 ┌─────────────────────────┼──────────────────────────┐
+                                 │                         │                          │
+                                 ▼                         ▼                          ▼
+                       TaskService.createTask()  TaskService.updateTask()  TaskService.deleteTask()
+                                 │                         │                          │
+                                 └─────────────────────────┴──────────────────────────┘
+                                                           │
+                                                           ▼
+                                                  Supabase (tasks table)
+                                                  └─► RLS Policy: user_id == auth.uid()
+
+┌──────────────────────────┐
+│  DailyReportComponent    │
+└──────────┬───────────────┘
            │
-           └──► LogService.getLogs(projectId?) ──────► Retorna LogEntry[]
-                 └─► Filtrado por projeto (optional)
+           └──► LogService.getLogs(projectId?) ──► Filtra e organiza por:
+                 ├─► Hoje (Realizado) - is_next_day_task = false
+                 ├─► Próximo Dia (Foco) - is_next_day_task = true
+                 └─► Impedimentos - entries com campo impediments preenchido
 ```
 
 ### Modelo de Tabelas Supabase
@@ -227,7 +304,25 @@ CREATE TABLE log_entries (
     last_task TEXT NOT NULL,
     next_steps TEXT NOT NULL,
     tags TEXT[] DEFAULT '{}',
+    is_next_day_task BOOLEAN DEFAULT false,
+    impediments TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+```
+
+#### Tabela: `tasks`
+```sql
+CREATE TABLE tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'backlog',
+    tags TEXT[] DEFAULT '{}',
+    completed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 ```
 
@@ -247,12 +342,19 @@ CREATE POLICY "Users can only read their own logs"
 ON log_entries FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
-    updated_at?: string;   // Timestamp ISO
-    user_id?: string;      // UUID do usuário (auth.users)
-    name: string;          // Nome do projeto
-    description?: string;  // Descrição do projeto
-    status: ProjectStatus; // Status do projeto
-}
+```
+
+**Tasks - Acesso de Leitura e Escrita:**
+```sql
+CREATE POLICY "Users can only read their own tasks"
+ON tasks FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can only create their own tasks"
+ON tasks FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
 ```
 
 ### Fluxo de Dados
@@ -355,9 +457,20 @@ saveLog(entry: LogEntry, currentEntries: LogEntry[], projectId?: string): Promis
 - Componente de gerenciamento de projetos
 - Exibe lista de projetos com status visual
 - Permite criar novo projeto
+- Permite editar nome e descrição de projetos existentes
 - Permite selecionar projeto para abrir diário
 - Permite deletar projeto
+- Permite abrir modal de tarefas do projeto
 - Indica projeto atualmente selecionado
+
+**Principais Métodos:**
+```typescript
+openEditModal(project: Project, event?: Event): void
+onEditProject(): Promise<void>
+openTasksModal(project: Project, event?: Event): void
+deleteProject(projectId: string): Promise<void>
+selectProject(project: Project): void
+```
 
 ### 5. **DiaryComponent** (`features/diary/diary.component.ts`)
 
@@ -409,13 +522,80 @@ history = computed(() => this.entries().slice(1))
 - Monitora status de conexão (online/offline)
 - Interface visual clara para experiência do usuário
 
-### 9. **App (Root Component)** (`app.ts`)
+### 9. **TasksModalComponent** (`features/projects/components/tasks-modal`)
+
+**Responsabilidades:**
+- Modal de gerenciamento de tarefas de um projeto
+- Visualização organizada por status (Backlog, Fazendo, Concluída)
+- Criação de novas tarefas com título, descrição e tags
+- Edição de tarefas existentes
+- Alteração de status de tarefas (drag-and-drop style)
+- Filtro por status de tarefa
+- Exclusão de tarefas
+- Integração com TaskService
+
+**Principais Métodos:**
+```typescript
+onCreateTask(): Promise<void>
+openEditTask(task: Task): void
+onSaveEditTask(): Promise<void>
+onDeleteTask(taskId: string): Promise<void>
+updateTaskStatus(taskId: string, status: TaskStatus): Promise<void>
+```
+
+### 10. **TaskService** (`core/services/task.service.ts`)
+
+**Responsabilidades:**
+- Abstrai persistência de tarefas via Supabase com RLS policies
+- Carrega tarefas de um projeto específico
+- Cria novas tarefas com associação automática de user_id
+- Atualiza status e dados de tarefas
+- Deleta tarefas com isolamento por usuário
+- Marca automaticamente data de conclusão quando status = concluída
+- Normalização de status para compatibilidade frontend/backend
+
+**Principais Métodos:**
+```typescript
+loadProjectTasks(projectId: string): Promise<Task[]>
+createTask(projectId: string, title: string, description?: string, status?: TaskStatus, tags?: string[]): Promise<{success: boolean; error?: string; task?: Task}>
+updateTaskStatus(taskId: string, status: TaskStatus): Promise<{success: boolean; error?: string}>
+updateTask(taskId: string, updates: Partial<Task>): Promise<{success: boolean; error?: string}>
+deleteTask(taskId: string): Promise<{success: boolean; error?: string}>
+```
+
+### 11. **DailyReportComponent** (`features/diary/daily-report`)
+
+**Responsabilidades:**
+- Exibe relatório consolidado do trabalho do dia
+- Organiza entradas em três seções:
+  - **Hoje (Realizado)**: Tarefas completadas no dia atual
+  - **Próximo Dia (Foco)**: Tarefas planejadas para o dia seguinte (is_next_day_task = true)
+  - **Impedimentos**: Entradas com campo impediments preenchido
+- Gera relatório formatado em texto para cópia
+- Funcionalidade de copiar para área de transferência
+- Navegação de volta para diário ou projetos
+
+**Propriedades Computadas:**
+```typescript
+todayCompleted = computed(() => // Filtra entradas de hoje com is_next_day_task = false
+nextDayTasks = computed(() => // Filtra entradas com is_next_day_task = true
+impediments = computed(() => // Filtra entradas de hoje com impediments preenchido
+```
+
+**Principais Métodos:**
+```typescript
+copyReportToClipboard(): void
+goBackToDiary(): void
+goBackToProjects(): void
+```
+
+### 12. **App (Root Component)** (`app.ts`)
 
 **Responsabilidades:**
 - Roteamento condicional:
   - Não autenticado → LoginComponent
   - Autenticado + sem projeto → ProjectsComponent
-  - Autenticado + com projeto → DiaryComponent
+  - Autenticado + com projeto → DiaryComponent ou DailyReportComponent
 - Injeta AuthService e ProjectService para verificar signals
 
 ## 🚀 Como Executar
@@ -654,9 +834,29 @@ return new Promise((resolve) => {
 
 ### Cenário 5: Standup/Reunião Diária
 1. Abrir DevContext
-2. Consultar entradas recentes do projeto
-3. Usar informações de "last_task" para reportar progresso
-4. Compartilhar "next_steps" como plano do dia
+2. Acessar o Relatório Diário
+3. Visualizar seções organizadas:
+   - **Hoje (Realizado)**: O que foi completado
+   - **Próximo Dia (Foco)**: Próximos passos
+   - **Impedimentos**: Bloqueios identificados
+4. Copiar relatório formatado para área de transferência
+5. Compartilhar em reunião ou chat da equipe
+
+### Cenário 6: Gerenciamento de Tarefas do Projeto
+1. Abrir DevContext e ir para a tela de projetos
+2. Selecionar projeto e clicar em "Gerenciar Tarefas"
+3. Visualizar tarefas organizadas por status (Backlog, Fazendo, Concluída)
+4. Criar nova tarefa com título, descrição e tags
+5. Mover tarefas entre status conforme progresso
+6. Editar ou deletar tarefas conforme necessário
+7. Filtrar tarefas por status específico
+
+### Cenário 7: Edição de Informações do Projeto
+1. Abrir DevContext
+2. Na tela de projetos, clicar no botão de editar do projeto desejado
+3. Atualizar nome ou descrição do projeto
+4. Salvar alterações
+5. Visualizar projeto atualizado na lista
 
 ## 🤝 Contribuindo
 

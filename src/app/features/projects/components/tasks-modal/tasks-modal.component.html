@@ -1,18 +1,34 @@
-<div class="fixed inset-0 bg-[#000]/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-    <div class="max-w-4xl w-full max-h-[90vh] bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl overflow-hidden flex flex-col">
-        <!-- Header -->
-        <div class="p-6 border-b border-[#313244] bg-[#11111b] flex justify-between items-center">
-            <div>
-                <h2 class="text-2xl font-bold text-[#cdd6f4]">Tarefas do Projeto</h2>
-                <p class="text-sm text-[#a6adc8] mt-1">{{ project()?.name }}</p>
-            </div>
-            <button 
-                (click)="onClose()"
-                class="text-[#6c7086] hover:text-white text-2xl">✕</button>
+<div class="fixed inset-0 bg-[#0f1115] flex flex-col z-50">
+    <!-- Header similar ao layout principal -->
+    <div class="bg-[#11111b] border-b border-[#313244] p-4 flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-[#cdd6f4]">Tarefas do Projeto</h2>
+            <p class="text-xs text-[#a6adc8] mt-1">{{ project()?.name }}</p>
         </div>
+        <div class="flex items-center gap-3">
+            <!-- Botão Nova Tarefa: texto em telas maiores (max 150px), apenas ícone em telas pequenas -->
+            <button
+                (click)="showCreateTaskForm.set(!showCreateTaskForm())"
+                class="hidden sm:inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] font-bold transition-all max-w-[150px] overflow-hidden whitespace-nowrap"
+                title="Nova Tarefa">
+                + Nova Tarefa
+            </button>
 
-        <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            <button
+                (click)="showCreateTaskForm.set(!showCreateTaskForm())"
+                class="sm:hidden p-2 rounded-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] font-bold transition-all"
+                aria-label="Nova Tarefa">
+                +
+            </button>
+
+            <button
+                (click)="onClose()"
+                class="text-[#6c7086] hover:text-white text-lg">✕</button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-hidden p-6 custom-scrollbar max-w-7xl mx-auto w-full flex flex-col gap-6 min-h-0">
             @if (errorMessage()) {
                 <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-lg text-sm">
                     {{ errorMessage() }}
@@ -39,49 +55,73 @@
                         {{ getStatusLabel(status) }}
                     </button>
                 }
+            </div>
 
-            <!-- Botão Criar Tarefa -->
-            <button 
-                (click)="showCreateTaskForm.set(!showCreateTaskForm())"
-                class="w-full bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] px-4 py-3 rounded-lg font-bold transition-all">
-                {{ showCreateTaskForm() ? '✕ Cancelar' : '+ Nova Tarefa' }}
-            </button>
-
-            <!-- Formulário Criar Tarefa -->
+            <!-- Modal Criar Tarefa -->
             @if (showCreateTaskForm()) {
-                <form [formGroup]="createTaskForm" (ngSubmit)="onCreateTask()" class="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4 space-y-3">
-                    <div>
-                        <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Título da Tarefa</label>
-                        <input type="text" formControlName="title" autofocus
-                            class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]"
-                            placeholder="Ex: Implementar login">
-                    </div>
+                <div class="fixed inset-0 bg-[#000]/40 flex items-center justify-center z-50 p-6">
+                    <div class="max-w-md w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#cdd6f4]">Nova Tarefa</h3>
+                            <button (click)="showCreateTaskForm.set(false)" class="text-[#6c7086]">✕</button>
+                        </div>
+                        <form [formGroup]="createTaskForm" (ngSubmit)="onCreateTask()" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Título da Tarefa</label>
+                                <input type="text" formControlName="title" autofocus
+                                    class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]"
+                                    placeholder="Ex: Implementar login">
+                            </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Descrição (Opcional)</label>
-                        <textarea formControlName="description" rows="2"
-                            class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"
-                            placeholder="Detalhes da tarefa..."></textarea>
-                    </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Descrição (Opcional)</label>
+                                <textarea formControlName="description" rows="3"
+                                    class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"
+                                    placeholder="Detalhes da tarefa..."></textarea>
+                            </div>
 
-                    <button type="submit" [disabled]="createTaskForm.invalid || isCreating()"
-                        class="w-full bg-[#a6e3a1] hover:bg-[#a6e3a1]/90 text-[#1e1e2e] py-2 rounded-lg font-bold transition-all disabled:opacity-50">
-                        {{ isCreating() ? 'Criando...' : 'Criar Tarefa' }}
-                    </button>
-                </form>
+                            <!-- Tags -->
+                            <div>
+                                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Tags</label>
+                                <div class="flex flex-wrap gap-2">
+                                    @for (tag of availableTags; track tag) {
+                                        <button type="button"
+                                            (click)="toggleCreateTag(tag)"
+                                            class="px-3 py-1 rounded-full text-xs transition-all"
+                                            [class.bg-[#cba6f7]]="createSelectedTags.includes(tag)"
+                                            [class.text-[#11111b]]="createSelectedTags.includes(tag)"
+                                            [class.bg-[#313244]]="!createSelectedTags.includes(tag)"
+                                            [class.text-[#a6adc8]]="!createSelectedTags.includes(tag)">
+                                            {{ tag }}
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button type="submit" [disabled]="createTaskForm.invalid || isCreating()"
+                                    class="flex-1 bg-[#a6e3a1] hover:bg-[#a6e3a1]/90 text-[#1e1e2e] py-2 rounded-lg font-bold transition-all disabled:opacity-50">
+                                    {{ isCreating() ? 'Criando...' : 'Criar Tarefa' }}
+                                </button>
+                                <button type="button" (click)="showCreateTaskForm.set(false)" class="px-4 py-2 rounded-lg bg-[#313244] text-[#a6adc8]">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             }
 
             <!-- Kanban Board -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="flex-1 min-h-0 overflow-hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 h-full min-h-0 w-full">
                 <!-- Backlog -->
-                <div class="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4">
+                <div class="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4 flex flex-col h-full min-h-0">
                     <div class="flex items-center gap-2 mb-4 pb-3 border-b border-[#313244]">
                         <div class="w-3 h-3 rounded-full" style="background-color: #f5c2e7;"></div>
                         <h3 class="font-bold text-[#cdd6f4]">Backlog</h3>
                         <span class="ml-auto text-xs bg-[#313244] px-2 py-1 rounded text-[#a6adc8]">{{ tasksByStatus().backlog.length }}</span>
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="space-y-2 overflow-y-auto mt-2 min-h-0">
                         @for (task of tasksByStatus().backlog; track task.id) {
                             <div class="bg-[#181825] border border-[#313244] rounded p-3 hover:border-[#45475a] transition-all group">
                                 <p class="text-sm font-medium text-[#cdd6f4] mb-2">{{ task.title }}</p>
@@ -94,6 +134,7 @@
                                         class="flex-1 text-xs px-2 py-1 rounded bg-[#a6e3a1]/20 text-[#a6e3a1] hover:bg-[#a6e3a1]/30 transition-all">
                                         Fazendo
                                     </button>
+                                    <button type="button" (click)="openEditTask(task)" class="text-xs px-2 py-1 rounded bg-[#cba6f7]/20 text-[#cba6f7] hover:bg-[#cba6f7]/30 transition-all">Editar</button>
                                     <button 
                                         (click)="onDeleteTask(task.id!)"
                                         class="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all">
@@ -109,14 +150,14 @@
                 </div>
 
                 <!-- Fazendo -->
-                <div class="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4">
+                <div class="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4 flex flex-col h-full min-h-0">
                     <div class="flex items-center gap-2 mb-4 pb-3 border-b border-[#313244]">
                         <div class="w-3 h-3 rounded-full" style="background-color: #a6e3a1;"></div>
                         <h3 class="font-bold text-[#cdd6f4]">Fazendo</h3>
                         <span class="ml-auto text-xs bg-[#313244] px-2 py-1 rounded text-[#a6adc8]">{{ tasksByStatus().fazendo.length }}</span>
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="space-y-2 overflow-y-auto mt-2 min-h-0">
                         @for (task of tasksByStatus().fazendo; track task.id) {
                             <div class="bg-[#181825] border border-[#313244] rounded p-3 hover:border-[#45475a] transition-all group">
                                 <p class="text-sm font-medium text-[#cdd6f4] mb-2">{{ task.title }}</p>
@@ -134,6 +175,7 @@
                                         class="flex-1 text-xs px-2 py-1 rounded bg-[#94e2d5]/20 text-[#94e2d5] hover:bg-[#94e2d5]/30 transition-all">
                                         Concluir
                                     </button>
+                                    <button type="button" (click)="openEditTask(task)" class="text-xs px-2 py-1 rounded bg-[#cba6f7]/20 text-[#cba6f7] hover:bg-[#cba6f7]/30 transition-all">Editar</button>
                                     <button 
                                         (click)="onDeleteTask(task.id!)"
                                         class="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all">
@@ -149,14 +191,14 @@
                 </div>
 
                 <!-- Concluída -->
-                <div class="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4">
+                <div class="bg-[#1e1e2e] border border-[#313244] rounded-lg p-4 flex flex-col h-full min-h-0">
                     <div class="flex items-center gap-2 mb-4 pb-3 border-b border-[#313244]">
                         <div class="w-3 h-3 rounded-full" style="background-color: #94e2d5;"></div>
                         <h3 class="font-bold text-[#cdd6f4]">Concluída</h3>
                         <span class="ml-auto text-xs bg-[#313244] px-2 py-1 rounded text-[#a6adc8]">{{ tasksByStatus().concluida.length }}</span>
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="space-y-2 overflow-y-auto mt-2 min-h-0">
                         @for (task of tasksByStatus().concluida; track task.id) {
                             <div class="bg-[#181825] border border-[#313244] rounded p-3 hover:border-[#45475a] transition-all group">
                                 <p class="text-sm font-medium text-[#cdd6f4] line-through mb-2">{{ task.title }}</p>
@@ -172,6 +214,7 @@
                                         class="flex-1 text-xs px-2 py-1 rounded bg-[#a6e3a1]/20 text-[#a6e3a1] hover:bg-[#a6e3a1]/30 transition-all">
                                         Reabrir
                                     </button>
+                                    <button type="button" (click)="openEditTask(task)" class="text-xs px-2 py-1 rounded bg-[#cba6f7]/20 text-[#cba6f7] hover:bg-[#cba6f7]/30 transition-all">Editar</button>
                                     <button 
                                         (click)="onDeleteTask(task.id!)"
                                         class="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all">
@@ -185,14 +228,53 @@
                         }
                     </div>
                 </div>
+                </div>
             </div>
+
+            <!-- Modal Editar Tarefa -->
+            @if (selectedTaskForEdit()) {
+                <div class="fixed inset-0 bg-[#000]/40 flex items-center justify-center z-50 p-6">
+                    <div class="max-w-md w-full bg-[#181825] border border-[#313244] rounded-2xl shadow-3xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#cdd6f4]">Editar Tarefa</h3>
+                            <button (click)="selectedTaskForEdit.set(null)" class="text-[#6c7086]">✕</button>
+                        </div>
+                        <form [formGroup]="editTaskForm" (ngSubmit)="onSaveEditTask()" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Título</label>
+                                <input type="text" formControlName="title" autofocus
+                                    class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Descrição</label>
+                                <textarea formControlName="description" rows="3"
+                                    class="w-full bg-[#181825] border border-[#313244] rounded-lg px-3 py-2 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"></textarea>
+                            </div>
+                            <!-- Tags -->
+                            <div>
+                                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Tags</label>
+                                <div class="flex flex-wrap gap-2">
+                                    @for (tag of availableTags; track tag) {
+                                        <button type="button"
+                                            (click)="toggleEditTag(tag)"
+                                            class="px-3 py-1 rounded-full text-xs transition-all"
+                                            [class.bg-[#cba6f7]]="editSelectedTags.includes(tag)"
+                                            [class.text-[#11111b]]="editSelectedTags.includes(tag)"
+                                            [class.bg-[#313244]]="!editSelectedTags.includes(tag)"
+                                            [class.text-[#a6adc8]]="!editSelectedTags.includes(tag)">
+                                            {{ tag }}
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button type="submit" class="flex-1 bg-[#cba6f7] text-[#1e1e2e] py-2 rounded-lg font-bold">Salvar</button>
+                                <button type="button" (click)="selectedTaskForEdit.set(null)" class="px-4 py-2 rounded-lg bg-[#313244] text-[#a6adc8]">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
         </div>
     </div>
-</div>
-
-<style>
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #181825; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #585b70; }
-</style>
