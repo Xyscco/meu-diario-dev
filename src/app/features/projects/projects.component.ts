@@ -5,7 +5,7 @@ import { ProjectService } from '../../core/services/project.service';
 import { AuthService } from '../../core/services/auth.service';
 import { EpicService } from '../../core/services/epic.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { Project, ProjectStatus, PROJECT_STATUS_LIST, PROJECT_STATUS_COLORS } from '../../core/models/project.model';
+import { Project, ProjectStatus, PROJECT_STATUS_LIST, PROJECT_STATUS_COLORS, ProjectEnvironment, PROJECT_ENVIRONMENT_LIST, PROJECT_ENVIRONMENT_COLORS } from '../../core/models/project.model';
 import { TasksModalComponent } from './components/tasks-modal/tasks-modal.component';
 import { EpicsModalComponent } from './components/epics-modal/epics-modal.component';
 
@@ -30,6 +30,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     projectSelected = output<Project>();
 
     filterStatus = signal<ProjectStatus | null>('Em execução'); // Default: apenas ativos
+    filterEnvironment = signal<ProjectEnvironment | null>(null);
     showCreateModal = signal(false);
     showEditModal = signal(false);
     showTasksModal = signal(false);
@@ -41,28 +42,40 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     isUpdating = signal(false);
     errorMessage = signal<string | null>(null);
     statusList = PROJECT_STATUS_LIST;
+    environmentList = PROJECT_ENVIRONMENT_LIST;
     currentTime = Date.now();
     private timeInterval: any;
 
     createForm = this.fb.group({
         name: ['', [Validators.required, Validators.minLength(3)]],
-        description: ['']
+        description: [''],
+        environment: ['']
     });
 
     editForm = this.fb.group({
         name: ['', [Validators.required, Validators.minLength(3)]],
-        description: ['']
+        description: [''],
+        environment: ['']
     });
 
     filteredProjects = computed(() => {
         const allProjects = this.projectService.projects();
-        const filter = this.filterStatus();
+        const statusFilter = this.filterStatus();
+        const environmentFilter = this.filterEnvironment();
         
-        if (filter === null) {
-            return allProjects;
+        let filtered = allProjects;
+
+        // Aplicar filtro de status
+        if (statusFilter !== null) {
+            filtered = filtered.filter((p: Project) => p.status === statusFilter);
         }
-        
-        return allProjects.filter(p => p.status === filter);
+
+        // Aplicar filtro de ambiente
+        if (environmentFilter !== null) {
+            filtered = filtered.filter((p: Project) => p.environment === environmentFilter);
+        }
+
+        return filtered;
     });
 
     ngOnInit(): void {
@@ -82,14 +95,23 @@ export class ProjectsComponent implements OnInit, OnDestroy {
         return PROJECT_STATUS_COLORS[status];
     }
 
+    getEnvironmentColor(environment: ProjectEnvironment): string {
+        return PROJECT_ENVIRONMENT_COLORS[environment];
+    }
+
     async onCreateProject(): Promise<void> {
         if (this.createForm.invalid) return;
 
         this.isCreating.set(true);
         this.errorMessage.set(null);
 
-        const { name, description } = this.createForm.value;
-        const result = await this.projectService.createProject(name!, description || undefined);
+        const { name, description, environment } = this.createForm.value;
+        const result = await this.projectService.createProject(
+            name!,
+            description || undefined,
+            'Aguardando',
+            (environment as ProjectEnvironment) || undefined
+        );
 
         if (result.success) {
             this.createForm.reset();
@@ -123,7 +145,8 @@ export class ProjectsComponent implements OnInit, OnDestroy {
         this.projectToEdit.set(project);
         this.editForm.patchValue({
             name: project.name,
-            description: project.description || ''
+            description: project.description || '',
+            environment: project.environment || ''
         });
         this.showEditModal.set(true);
     }
@@ -144,10 +167,11 @@ export class ProjectsComponent implements OnInit, OnDestroy {
         const project = this.projectToEdit();
         if (!project?.id) return;
 
-        const { name, description } = this.editForm.value;
+        const { name, description, environment } = this.editForm.value;
         const result = await this.projectService.updateProject(project.id, {
             name: name!,
-            description: description || undefined
+            description: description || undefined,
+            environment: (environment as ProjectEnvironment) || undefined
         });
 
         if (result.success) {

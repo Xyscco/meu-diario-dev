@@ -1,6 +1,6 @@
 import { Injectable, signal, NgZone } from '@angular/core';
 import { supabase } from '../config/supabase.config';
-import { Project, ProjectStatus } from '../models/project.model';
+import { Project, ProjectStatus, ProjectEnvironment } from '../models/project.model';
 
 @Injectable({
     providedIn: 'root'
@@ -37,7 +37,8 @@ export class ProjectService {
     async createProject(
         name: string,
         description?: string,
-        status: ProjectStatus = 'Aguardando'
+        status: ProjectStatus = 'Aguardando',
+        environment?: ProjectEnvironment
     ): Promise<{ success: boolean; error?: string; project?: Project }> {
         try {
             // Obter o user_id do usuário autenticado
@@ -52,6 +53,7 @@ export class ProjectService {
                     name,
                     description,
                     status,
+                    environment,
                     user_id: user.id
                 })
                 .select()

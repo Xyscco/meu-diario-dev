@@ -47,7 +47,8 @@
     <div class="max-w-7xl mx-auto px-6 mt-8">
 
         <!-- Ações -->
-        <div class="mb-8 flex justify-between items-center gap-4">
+        <div class="mb-8 flex flex-col gap-4">
+            <!-- Filtros de Status -->
             <div class="flex gap-2 flex-wrap">
                 <button 
                     (click)="filterStatus.set(null)"
@@ -85,11 +86,58 @@
                     Finalizado
                 </button>
             </div>
-            <button 
-                (click)="showCreateModal.set(true)"
-                class="bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] px-6 py-2 rounded-lg font-bold transition-all">
-                + Novo Projeto
-            </button>
+
+            <!-- Filtros de Ambiente -->
+            <div class="flex gap-2 flex-wrap">
+                <button 
+                    (click)="filterEnvironment.set(null)"
+                    [class.active]="filterEnvironment() === null"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterEnvironment() === null ? 'bg-[#cba6f7] text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'">
+                    Todos Ambientes
+                </button>
+                <button 
+                    (click)="filterEnvironment.set('Syncode')"
+                    [class.active]="filterEnvironment() === 'Syncode'"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterEnvironment() === 'Syncode' ? 'text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'"
+                    [style.background-color]="filterEnvironment() === 'Syncode' ? '#89b4fa' : ''">
+                    Syncode
+                </button>
+                <button 
+                    (click)="filterEnvironment.set('Adaptei')"
+                    [class.active]="filterEnvironment() === 'Adaptei'"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterEnvironment() === 'Adaptei' ? 'text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'"
+                    [style.background-color]="filterEnvironment() === 'Adaptei' ? '#cba6f7' : ''">
+                    Adaptei
+                </button>
+                <button 
+                    (click)="filterEnvironment.set('Kodasys')"
+                    [class.active]="filterEnvironment() === 'Kodasys'"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterEnvironment() === 'Kodasys' ? 'text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'"
+                    [style.background-color]="filterEnvironment() === 'Kodasys' ? '#f38ba8' : ''">
+                    Kodasys
+                </button>
+                <button 
+                    (click)="filterEnvironment.set('Pessoal')"
+                    [class.active]="filterEnvironment() === 'Pessoal'"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                    [ngClass]="filterEnvironment() === 'Pessoal' ? 'text-[#1e1e2e]' : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'"
+                    [style.background-color]="filterEnvironment() === 'Pessoal' ? '#a6e3a1' : ''">
+                    Pessoal
+                </button>
+            </div>
+
+            <!-- Botão Novo Projeto -->
+            <div class="flex justify-end">
+                <button 
+                    (click)="showCreateModal.set(true)"
+                    class="bg-[#cba6f7] hover:bg-[#cba6f7]/90 text-[#1e1e2e] px-6 py-2 rounded-lg font-bold transition-all">
+                    + Novo Projeto
+                </button>
+            </div>
         </div>
 
         <!-- Lista de Projetos -->
@@ -117,6 +165,15 @@
                             </div>
                         </div>
                     </div>
+
+                    @if (project.environment) {
+                        <div class="mb-3 flex items-center gap-2">
+                            <span class="text-xs font-semibold px-2 py-1 rounded-full text-white" 
+                                [style.background-color]="getEnvironmentColor(project.environment)">
+                                {{ project.environment }}
+                            </span>
+                        </div>
+                    }
 
                     @if (project.description) {
                         <p class="text-[#a6adc8] text-sm mb-4 line-clamp-2">{{ project.description }}</p>
@@ -186,6 +243,15 @@
                     placeholder="Descreva o propósito do projeto..."></textarea>
             </div>
 
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Ambiente (Opcional)</label>
+                <select formControlName="environment"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all">
+                    <option value="">Selecione um ambiente</option>
+                    <option *ngFor="let env of environmentList" [value]="env">{{ env }}</option>
+                </select>
+            </div>
+
             @if (errorMessage()) {
                 <div class="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg text-xs text-center">
                     {{ errorMessage() }}
@@ -224,6 +290,15 @@
                 <textarea formControlName="description" rows="3"
                     class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all placeholder-[#45475a] resize-none"
                     placeholder="Descreva o propósito do projeto..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-[#a6adc8] uppercase mb-2">Ambiente (Opcional)</label>
+                <select formControlName="environment"
+                    class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-4 py-3 text-[#cdd6f4] focus:ring-2 focus:ring-[#cba6f7] outline-none transition-all">
+                    <option value="">Selecione um ambiente</option>
+                    <option *ngFor="let env of environmentList" [value]="env">{{ env }}</option>
+                </select>
             </div>
 
             @if (errorMessage()) {
